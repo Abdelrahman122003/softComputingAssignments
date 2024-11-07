@@ -62,7 +62,7 @@ vector<pair<int, vector<int>>> handleTestCasesData(vector<int> numbers) {
 
 int main() {
     // Read numbers from file
-    vector<int> numbers = readFromFile("./data.txt");
+    vector<int> numbers = readFromFile("./docs/data.txt");
 
     // Check if there was an error reading the file
     if (numbers[0] == -100) {
@@ -71,12 +71,13 @@ int main() {
     }
 
     // Process the numbers to handle test cases data
+    // pair<maxTime, allExecutionTimesForEachTestCase>
     vector<pair<int, vector<int>>> testCases = handleTestCasesData(numbers);    
     
     // Example of printing the test cases
     for (int i = 0; i < testCases.size(); i++) {
         cout << "Test case " << i + 1 << ": " << endl;
-        cout << "Number of tasks: " << testCases[i].first << endl;
+        cout << "Max Time: " << testCases[i].first << endl;
         cout << "Execution times: ";
         for (int time : testCases[i].second) {
             cout << time << " ";

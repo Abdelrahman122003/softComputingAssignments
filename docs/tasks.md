@@ -16,62 +16,53 @@
 ### 3. Representation of the Solution:
 
 - Define a binary, one-dimensional chromosome: Each gene represents a task, where `1` means assigned to core 1 and `0` means assigned to core 2.
-- **[Time estimate: 30 minutes]**
+- **[Time estimate: 30 minutes][]**
 
 ### 4. Evaluate Fitness Function:
 
 - Write a function to evaluate the fitness of a solution (chromosome). The fitness is determined by calculating the maximum execution time between both cores.
 - If either core exceeds the max time limit, the solution is infeasible, and you should handle infeasibility appropriately.
-- **[Time estimate: 1 hour]**
+- **[Time estimate: 1 hour][Done]**
 
 ### 5. Initialize Population:
 
 - Generate an initial population with random chromosomes.
 - Try different population sizes (50, 100, 250) and note how this affects the results.
-- **[Time estimate: 1 hour]**
+- **[Time estimate: 1 hour][Done]**
 
 ### 6. Selection:
 
 - Implement the roulette wheel selection method to choose chromosomes for the next generation.
-- **[Time estimate: 1 hour]**
+- **[Time estimate: 1 hour][Ahmed]**
 
 ### 7. Crossover:
 
 - Implement a one-point crossover method to combine two parent chromosomes into a child chromosome.
-- **[Time estimate: 1 hour]**
+- **[Time estimate: 1 hour][Done]**
 
 ### 8. Mutation:
 
 - Implement a bit-flip mutation method to randomly flip the gene of a chromosome with a small probability.
-- **[Time estimate: 1 hour]**
+- **[Time estimate: 1 hour][Done]**
 
 ### 9. Elitism Replacement:
 
 - Ensure that the best solution is carried over to the next generation (elitism).
-- **[Time estimate: 30 minutes]**
+- **[Time estimate: 30 minutes][Ahmed]**
 
 ### 10. Main Genetic Algorithm Loop:
 
 - Implement the main loop of the genetic algorithm where:
   - The population is evolved for several generations (you decide the maximum number of generations).
   - Apply selection, crossover, mutation, and elitism to produce the next generation.
-- **[Time estimate: 2-3 hours]**
+- **[Time estimate: 2-3 hours][]**
 
 ### 11. Handle Infeasible Solutions:
 
 - Ensure infeasible solutions are handled correctly, either by discarding them or applying penalties to their fitness.
-- **[Time estimate: 1 hour]**
+- **[Time estimate: 1 hour][]**
 
 ### 12. Output the Results:
 
 - For each test case, output the index, the best solution found, its evaluation score, the chromosome representation, the tasks assigned to each core, and the total time taken for each core.
-- **[Time estimate: 1 hour]**
-
-### 13. Testing and Debugging:
-
-- Test the algorithm with various inputs to ensure correctness and optimize performance.
-- **[Time estimate: 2-3 hours]**
-
----
-
-## Estimated Total Time: 11-13 hours (including testing/debugging)
+- **[Time estimate: 1 hour][]**
