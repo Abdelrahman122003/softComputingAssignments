@@ -5,9 +5,12 @@
 #include <ctime>    // For time()
 #include <map>
 #include <algorithm>
+#include <numeric>  // For std::accumulate
+#include <cmath>  // for std::abs
 
 
 using namespace std;
+vector<vector<int>> rouletteWheel(vector<vector<int>>& winners,const multimap<double, vector<int>>& elements, const double& numOfTrials);
 
 ostream& operator<<(ostream& os, const vector<int>& vec)
 {
@@ -52,37 +55,74 @@ int fitness(vector<int> chromosome, int max_time_limit, vector<int> task_times)
 vector<vector<int>> selection(vector<vector<int>> population, int num_members, int max_time, vector<int> task_times){
     vector<vector<int>> selected_chromosomes;
     selected_chromosomes.reserve(num_members); 
-
+    const int MAX_FITNESS = accumulate(task_times.begin(), task_times.end(), 0);
     multimap<double, vector<int>> chromosomes;
 
     vector<int> fitnesses;
     fitnesses.reserve(population.size());
 
     int totalFitness = 0;
-    for (const vector<int>& chromosome : population){
-        int current_fitness = fitness(chromosome, max_time, task_times);
+    for (vector<int>& chromosome : population){
+        int actual_fitness = fitness(chromosome, max_time, task_times);
+
+        if (actual_fitness > max_time){
+            fitnesses.emplace_back(0);
+            chromosome = vector<int>(population[0].size() , 0);
+            continue;
+        }
+
+        // Adjust the fitness to be the bigger the fitness the better the solution
+        int current_fitness = MAX_FITNESS - actual_fitness;
         totalFitness += current_fitness;
         fitnesses.emplace_back(current_fitness);
 
-        // cout << "Fitness: " << current_fitness << " " << chromosome << endl;
+        cout << "Fitness: " << current_fitness << " " << chromosome << endl;
     }
+    cout << "Total fitness: " << totalFitness << endl;
 
+    double total_proportion = 0;
     for (int i = 0; i < fitnesses.size(); ++i){
-        if (fitnesses[i] >= max_time) continue; // Skips infeasible solutions
-        chromosomes.emplace(1.0 - ((double) fitnesses[i] / totalFitness), population[i]);
+        
+        chromosomes.emplace(((double) fitnesses[i] / totalFitness), population[i]);
+        total_proportion += ((double) fitnesses[i] / totalFitness);
     }
 
-    // for (auto& chromosome : chromosomes){
-    //     cout << chromosome.first << ": \n";
-    //     cout << chromosome.second << endl;
+    cout << "Total Proportion: " << total_proportion << endl;
+
+    for (auto& chromosome : chromosomes){
+        cout << chromosome.first << ": \n";
+        cout << chromosome.second << endl;
+    }
+
+    rouletteWheel(selected_chromosomes, chromosomes, num_members);
+    
+    // for (auto it = chromosomes.rbegin(); it != chromosomes.rend() && selected_chromosomes.size() < num_members; ++it) {
+    //     selected_chromosomes.emplace_back(it->second);
     // }
-
-    for (auto it = chromosomes.rbegin(); it != chromosomes.rend() && selected_chromosomes.size() < num_members; ++it) {
-        selected_chromosomes.emplace_back(it->second);
-    }
 
     return selected_chromosomes;
 }
+
+
+vector<vector<int>> rouletteWheel(vector<vector<int>>& winners,const multimap<double, vector<int>>& elements, const double& numOfTrials) {
+    for (int i = 0; i < numOfTrials; ++i){       
+        double random_prop = static_cast<double>(rand()) / RAND_MAX;
+        cout << "\nProportion: " << random_prop << endl;
+        double cumulativeUpperBound = 0.0; 
+        for (auto& element : elements){ 
+            cumulativeUpperBound += element.first;
+            cout << cumulativeUpperBound << endl;
+            if(random_prop <= cumulativeUpperBound){
+                cout << "Selected Chromosome: " << element.first << " " << element.second << endl;
+                winners.emplace_back(element.second);
+                break;
+            }
+        }
+    }
+    return winners;
+}
+
+
 
 
 // rol wheel
@@ -110,7 +150,7 @@ int main()
     srand(time(0));
     // vector<string> vec;
     vector<vector<int>>populations = initializePopulation(8, 4);
-    vector<vector<int>> selected_chromosomes = selection(populations, 5, 80, vector<int>{10, 20 , 30 , 6});
+    vector<vector<int>> selected_chromosomes = selection(populations, 5, 66, vector<int>{10, 20 , 30 , 6});
     cout << "\nSelected Chromosomes: \n";
     for(auto &chromosome : selected_chromosomes){
         cout << chromosome << endl;
