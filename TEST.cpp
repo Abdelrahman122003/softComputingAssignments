@@ -15,6 +15,7 @@ using namespace std;
 vector<vector<int>> bestSols;
 
 multimap<double, vector<int>> rouletteWheel(multimap<double, vector<int>>& winners,const multimap<double, vector<int>>& elements, const double& numOfTrials);
+int fitness(vector<int> chromosome, int max_time_limit, vector<int> task_times);
 
 ostream& operator<<(ostream& os, const vector<int>& vec)
 {
@@ -29,17 +30,38 @@ ostream& operator<<(ostream& os, const vector<int>& vec)
     return os;  // Return the ostream object to allow chaining
 }
 
-vector<vector<int>> initializePopulation(int population_size, int num_tasks)
+multimap<double, vector<int>> initializePopulation(int population_size, int num_tasks, vector<int> task_times, int max_time)
 {
-    vector<vector<int>> population(population_size, vector<int>(num_tasks));
+    const int MAX_FITNESS = accumulate(task_times.begin(), task_times.end(), 0);
+
+    vector<vector<int>> pop;
+    multimap<double, vector<int>> population;
+
+    // Generate Chromosomes
     for (int i = 0; i < population_size; i++)
     {
         vector<int> chromosome(num_tasks);
         for (int j = 0; j < num_tasks; j++)
             chromosome[j] = (rand() % 2) ? 1 : 0;
-        population[i] = chromosome;
+        pop[i] = chromosome;
     }
-    
+
+    for (vector<int>& chromosome : pop){
+        int actual_fitness = fitness(chromosome, max_time, task_times);
+
+        if (actual_fitness > max_time){
+            chromosome = vector<int>(num_tasks , 0);
+            population.emplace(0, chromosome);
+            continue;
+        }
+
+        // Adjust the fitness to be the bigger the fitness the better the solution
+        int current_fitness = MAX_FITNESS - actual_fitness;
+        population.emplace(current_fitness, chromosome);
+
+        cout << "Fitness: " << current_fitness << " " << chromosome << endl;
+    }
+
     return population;
 }
 
@@ -57,38 +79,43 @@ int fitness(vector<int> chromosome, int max_time_limit, vector<int> task_times)
 }
 
 
-multimap<double, vector<int>> selection(vector<vector<int>> population, int num_members, int max_time, vector<int> task_times){
+multimap<double, vector<int>> selection(multimap<double, vector<int>> population, int num_members){
     multimap<double, vector<int>> selected_chromosomes;
     multimap<double, vector<int>> chromosomes;
     
-    const int MAX_FITNESS = accumulate(task_times.begin(), task_times.end(), 0);
+    // const int MAX_FITNESS = accumulate(task_times.begin(), task_times.end(), 0);
     
-    vector<int> fitnesses;
-    fitnesses.reserve(population.size());
+    // vector<int> fitnesses;
+    // fitnesses.reserve(population.size());
 
-    int totalFitness = 0;
-    for (vector<int>& chromosome : population){
-        int actual_fitness = fitness(chromosome, max_time, task_times);
+    // int totalFitness = 0;
+    // for (vector<int>& chromosome : population){
+    //     int actual_fitness = fitness(chromosome, max_time, task_times);
 
-        if (actual_fitness > max_time){
-            fitnesses.emplace_back(0);
-            chromosome = vector<int>(population[0].size() , 0);
-            continue;
-        }
+    //     if (actual_fitness > max_time){
+    //         fitnesses.emplace_back(0);
+    //         chromosome = vector<int>(population[0].size() , 0);
+    //         continue;
+    //     }
 
-        // Adjust the fitness to be the bigger the fitness the better the solution
-        int current_fitness = MAX_FITNESS - actual_fitness;
-        totalFitness += current_fitness;
-        fitnesses.emplace_back(current_fitness);
+    //     // Adjust the fitness to be the bigger the fitness the better the solution
+    //     int current_fitness = MAX_FITNESS - actual_fitness;
+    //     totalFitness += current_fitness;
+    //     fitnesses.emplace_back(current_fitness);
 
-        cout << "Fitness: " << current_fitness << " " << chromosome << endl;
-    }
-    cout << "Total fitness: " << totalFitness << endl;
+    //     cout << "Fitness: " << current_fitness << " " << chromosome << endl;
+    // }
+    // cout << "Total fitness: " << totalFitness << endl;
+
+    double totalFitness = 0;
+    for_each(population.begin(), population.end(), [&totalFitness](const std::pair<const double, std::vector<int>>& pair) {
+        totalFitness += pair.first;
+    });
 
     double total_proportion = 0.0;
-    for (int i = 0; i < fitnesses.size(); ++i){
-        chromosomes.emplace(((double) fitnesses[i] / totalFitness), population[i]);
-        total_proportion += ((double) fitnesses[i] / totalFitness);
+    for (auto& chromosome: population){
+        chromosomes.emplace(((double) chromosome.first / totalFitness), chromosome.second);
+        total_proportion += ((double) chromosome.first / totalFitness);
     }
 
     cout << "Total Proportion: " << total_proportion << endl;
@@ -165,15 +192,15 @@ int main()
 {
     srand(time(0));
     // vector<string> vec;
-    vector<vector<int>>populations = initializePopulation(8, 4);
-    multimap<double, vector<int>> selected_chromosomes = selection(populations, 5, 66, vector<int>{10, 20 , 30 , 6});
+    multimap<double, vector<int>> populations = initializePopulation(8, 4, vector<int>{10, 20 , 30 , 6}, 66);
+    multimap<double, vector<int>> selected_chromosomes = selection(populations, 5);
     cout << "\nSelected Chromosomes: \n";
     for(auto &chromosome : selected_chromosomes){
         cout << "Adjusted Fitness: " << chromosome.first << " " << chromosome.second << endl;
     }
 
 
-    pair<vector<int>, vector<int>> newGeneration = _crossover(populations[0], populations[1]);
+    // pair<vector<int>, vector<int>> newGeneration = _crossover(populations[0], populations[1]);
 
 
     // for (int i = 0; i < populations.size(); i++)
