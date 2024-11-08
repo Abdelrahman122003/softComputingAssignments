@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cstdlib>  // For rand() and srand()
 #include <ctime>    // For time()
+#include <map>
+#include <algorithm>
 
 
 using namespace std;
@@ -46,6 +48,43 @@ int fitness(vector<int> chromosome, int max_time_limit, vector<int> task_times)
     return max(core1_time, core2_time);
 }
 
+
+vector<vector<int>> selection(vector<vector<int>> population, int num_members, int max_time, vector<int> task_times){
+    vector<vector<int>> selected_chromosomes;
+    selected_chromosomes.reserve(num_members); 
+
+    multimap<double, vector<int>> chromosomes;
+
+    vector<int> fitnesses;
+    fitnesses.reserve(population.size());
+
+    int totalFitness = 0;
+    for (const vector<int>& chromosome : population){
+        int current_fitness = fitness(chromosome, max_time, task_times);
+        totalFitness += current_fitness;
+        fitnesses.emplace_back(current_fitness);
+
+        // cout << "Fitness: " << current_fitness << " " << chromosome << endl;
+    }
+
+    for (int i = 0; i < fitnesses.size(); ++i){
+        if (fitnesses[i] >= max_time) continue; // Skips infeasible solutions
+        chromosomes.emplace(1.0 - ((double) fitnesses[i] / totalFitness), population[i]);
+    }
+
+    // for (auto& chromosome : chromosomes){
+    //     cout << chromosome.first << ": \n";
+    //     cout << chromosome.second << endl;
+    // }
+
+    for (auto it = chromosomes.rbegin(); it != chromosomes.rend() && selected_chromosomes.size() < num_members; ++it) {
+        selected_chromosomes.emplace_back(it->second);
+    }
+
+    return selected_chromosomes;
+}
+
+
 // rol wheel
 pair<vector<int>, vector<int>> crossover(vector<int> &parent1, vector<int> &parent2)
 {
@@ -70,8 +109,12 @@ int main()
 {
     srand(time(0));
     // vector<string> vec;
-    vector<vector<int>>populations = initializePopulation(3, 5);
-
+    vector<vector<int>>populations = initializePopulation(8, 4);
+    vector<vector<int>> selected_chromosomes = selection(populations, 5, 80, vector<int>{10, 20 , 30 , 6});
+    cout << "\nSelected Chromosomes: \n";
+    for(auto &chromosome : selected_chromosomes){
+        cout << chromosome << endl;
+    }
 
     // for (int i = 0; i < populations.size(); i++)
     // {
@@ -80,21 +123,21 @@ int main()
     //     }
     //     cout << "\n";
     // }
-    cout << "populations 1\n";
-    cout  << populations[0] << "\n";
-    cout << "populations 2\n";
-    cout << populations[1] << "\n";
+    // cout << "populations 1\n";
+    // cout  << populations[0] << "\n";
+    // cout << "populations 2\n";
+    // cout << populations[1] << "\n";
 
-    for(int i = 0; i < populations[0].size();i++)
-        cout << populations[0][i] << " ";
-    pair<vector<int>, vector<int>> newGeneration = crossover(populations[0], populations[1]);
+    // for(int i = 0; i < populations[0].size();i++)
+    //     cout << populations[0][i] << " ";
+    // pair<vector<int>, vector<int>> newGeneration = crossover(populations[0], populations[1]);
    
 
-    cout << "Generation 1 0\n";
-    vector<int> g1 = newGeneration.first;
-    cout  << g1 << "\n";
-    cout << "Generation 1 0\n";
-    vector<int> g2 = newGeneration.second;
-    cout  << g2 << "\n";
+    // cout << "Generation 1 0\n";
+    // vector<int> g1 = newGeneration.first;
+    // cout  << g1 << "\n";
+    // cout << "Generation 1 0\n";
+    // vector<int> g2 = newGeneration.second;
+    // cout  << g2 << "\n";
 
 }
