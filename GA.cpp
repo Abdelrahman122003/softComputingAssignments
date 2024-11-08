@@ -136,9 +136,9 @@ multimap<double, vector<int>> rouletteWheel(multimap<double, vector<int>>& winne
     return winners;
 }
 
-// multimap<double, vector<int>> crossover(multimap<double, vector<int>> curr_generation){
+multimap<double, vector<int>> crossover(multimap<double, vector<int>> curr_generation){
     
-// }
+}
 
 // rol wheel
 pair<vector<int>, vector<int>> _crossover(vector<int> &parent1, vector<int> &parent2)
