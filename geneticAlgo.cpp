@@ -12,6 +12,8 @@
 
 using namespace std;
 
+#define NUM_GENERATIONS 200
+
 // Function to merge two multimaps
 template <typename KeyType, typename ValueType>
 std::multimap<KeyType, ValueType> mergeMultimaps(
@@ -204,7 +206,7 @@ private:
         
         multimap<double, vector<int>> rest;
 
-        const int K = population_size / 4; 
+        const int K = population.size() / 4; 
 
         for (auto it = this->population.rbegin(); it != this->population.rend(); ++it) {
             if (bestSols.size() < K){
@@ -350,8 +352,8 @@ private:
         uniform_real_distribution<> dis(0.0, 1.0);
         
         initializePopulation();
-        for (int generation = 0; generation < 100; ++generation) {
-            multimap<double, vector<int>> selected_chromosomes = selection(5);
+        for (int generation = 0; generation < NUM_GENERATIONS; ++generation) {
+            multimap<double, vector<int>> selected_chromosomes = selection(population.size() / 3);
             multimap<double, vector<int>> offsprings;
             double random_prop = dis(gen);
             double pc = 0.5;
@@ -362,7 +364,7 @@ private:
             }
 
             random_prop = dis(gen);
-            double pm = 0.1;
+            double pm = 0.2;
             if (random_prop <= pm){
                 for (auto& offspring : offsprings) {
                     flip_bit_mutation((pair<double ,vector<int>>&) offspring);
@@ -375,6 +377,25 @@ private:
             // this->population.merge(bestSols);
             this->population = mergeMultimaps(offsprings, bestSols);
         }
+
+        // ZeroVector to represent infeasible solution
+        const vector<int> zeroVector = vector<int>(testCase.getNumTasks(), 0);
+
+        bool isInfeasibleSols = std::all_of(
+            population.begin(), population.end(),
+            [&zeroVector](const auto& chromosome) {
+                return chromosome.second == zeroVector;
+            }
+        );
+
+        if (isInfeasibleSols){
+            int newMax = testCase.getMaxTime() * 1.2 + 10;
+            cout << "We Cannot Reach a Solution Can Satisfy this Max Time ("<< testCase.getMaxTime() << ") Trying to Run Again with Max Time Equal to " << newMax << "...\n";
+            testCase.setMaxTime(newMax);
+            runGeneticAlgo();
+            return;
+        }
+
         auto bestSolution = population.rbegin();
         cout << "\nBest Solution: " << bestSolution->second << endl; 
         cout << "Actual Fitness(Total Execution Time): " << MAX_FITNESS - (int) bestSolution->first << '\n';
