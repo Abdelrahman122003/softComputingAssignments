@@ -1,6 +1,6 @@
+#include <iostream>
 #include <vector>
 #include <string>
-#include <iostream>
 #include <cstdlib>  // For rand() and srand()
 #include <ctime>    // For time()
 #include <map>
@@ -9,8 +9,8 @@
 #include <cmath>  // for std::abs
 #include <random>  // For better random number generation
 #include <fstream>
-using namespace std;
 
+using namespace std;
 
 // Function to merge two multimaps
 template <typename KeyType, typename ValueType>
@@ -26,7 +26,6 @@ std::multimap<KeyType, ValueType> mergeMultimaps(
 
     return mergedMap;
 }
-
 
 // Function to read data from file and return it as a vector of integers
 vector<int> readFromFile(string file) {
@@ -182,7 +181,6 @@ private:
         for (vector<int>& chromosome : this->initialPopulation){
             int adjusted_fitness = getAdjustedFitness(chromosome);
             population.emplace(adjusted_fitness, chromosome);
-            cout << "Fitness: " << adjusted_fitness << " " << chromosome << endl;
         }
     }
 
@@ -220,26 +218,12 @@ private:
             totalFitness += (int) pair.first;
         });
 
-        double total_proportion = 0.0;
-
         for (auto& chromosome: rest){
             chromosomes.emplace(chromosome.first / totalFitness, chromosome.second);
-            total_proportion += (chromosome.first / totalFitness);
-        }
-
-        cout << "Total Proportion: " << total_proportion << endl;
-
-        for (auto& chromosome : chromosomes){
-            cout << chromosome.first << ": \n";
-            cout << chromosome.second << endl;
         }
 
         rouletteWheel(selected_chromosomes, chromosomes, num_members);
-        
-        for (auto& sol: bestSols){
-            cout << "BEST SOLS: " << sol.first << " " << sol.second << endl;
-        }
-
+    
         multimap<double, vector<int>> result;
         
         for (auto& chromosome : selected_chromosomes){
@@ -253,13 +237,10 @@ private:
     multimap<double, vector<int>> rouletteWheel(multimap<double, vector<int>>& winners,const multimap<double, vector<int>>& elements, const double& numOfTrials) {
         for (int i = 0; i < numOfTrials; ++i){              
             double random_prop = static_cast<double>(rand()) / RAND_MAX;
-            cout << "\nProportion: " << random_prop << endl;
             double cumulativeUpperBound = 0.0; 
             for (auto& element : elements){ 
                 cumulativeUpperBound += element.first;
-                cout << cumulativeUpperBound << endl;
                 if (random_prop <= cumulativeUpperBound){
-                    cout << "Selected Chromosome: " << element.first << " " << element.second << endl;
                     winners.emplace(element.first, element.second);
                     break;
                 }
@@ -287,10 +268,6 @@ private:
                 offsprings.merge(_crossover(it->second, next_it->second));
             }
 
-            for (auto offspring: offsprings){
-                cout << "Offspring: " << offspring.first << " " << offspring.second << endl;
-            }
-
             multimap<double, vector<int>> bestOffsprings;
             int i = 0;
             for (auto it = offsprings.rbegin(); it != offsprings.rend() && i < curr_generation.size(); ++it) {     
@@ -298,9 +275,6 @@ private:
                 ++i;
             }
 
-            for (auto offspring: bestOffsprings){
-                cout << "Best Offspring: " << offspring.first << " " << offspring.second << endl;
-            }
             return bestOffsprings;
         }
         return offsprings;
@@ -309,7 +283,6 @@ private:
     multimap<double, vector<int>> _crossover(vector<int> &parent1, vector<int> &parent2)
     {
         int crossover_point = rand() % parent1.size();
-        cout << "crossover point : " << crossover_point << endl;
         vector<int> child1 = parent1;
         vector<int> child2 = parent2;
 
@@ -325,7 +298,6 @@ private:
         for (vector<int>& chrom : childs){
             int adjusted_fitness = getAdjustedFitness(chrom);
             offsprings.emplace(adjusted_fitness, chrom);
-            cout << "Fitness: " << adjusted_fitness << " " << chrom << endl;
         }
 
         return offsprings;
@@ -351,23 +323,23 @@ private:
     void printCoreTimes(const vector<int>& chromosome, const vector<int>& task_times)
     {
         int core1_time = 0, core2_time = 0;
-        cout << "\nTasks Assigned to Core 1: ";
+        cout << "Tasks Assigned to Core 1: ";
         for (int i = 0; i < chromosome.size(); i++) {
             if (chromosome[i] == 0) {
                 core1_time += task_times[i];
                 cout << task_times[i] << " ";
             }
         }
-        cout << ", Core1 Time: " << core1_time << endl;
+        cout << ", Core 1 Execution Time: " << core1_time << endl;
 
-        cout << "\nTasks Assigned to Core 2: ";
+        cout << "Tasks Assigned to Core 2: ";
         for (int i = 0; i < chromosome.size(); i++) {
             if (chromosome[i] == 1) {
                 core2_time += task_times[i];
                 cout << task_times[i] << " ";
             }
         }
-        cout << ", Core2 Time: " << core2_time << endl;
+        cout << ", Core 2 Execution Time: " << core2_time << endl;
     }
 
 
@@ -376,15 +348,10 @@ private:
         random_device rd;  // Get a seed from the hardware
         mt19937 gen(rd()); // Use Mersenne Twister generator
         uniform_real_distribution<> dis(0.0, 1.0);
-        // vector<string> vec;
+        
         initializePopulation();
-        for (int generation = 0; generation < 5; ++generation) {
-            cout << "\nGeneration " << generation + 1 << ":\n";
+        for (int generation = 0; generation < 100; ++generation) {
             multimap<double, vector<int>> selected_chromosomes = selection(5);
-            cout << "\nSelected Chromosomes: \n";
-            for(auto &chromosome : selected_chromosomes){
-                cout << "Adjusted Fitness: " << chromosome.first << " " << chromosome.second << endl;
-            }
             multimap<double, vector<int>> offsprings;
             double random_prop = dis(gen);
             double pc = 0.5;
@@ -400,46 +367,23 @@ private:
                 for (auto& offspring : offsprings) {
                     flip_bit_mutation((pair<double ,vector<int>>&) offspring);
                 }
-                cout << "\nOffsprings after mutation: \n";
-            }
-
-            for(auto& ch : offsprings) {
-                cout << "Offsprings Before Merge: " << (int) ch.first << " " << ch.second << endl;
-            }
-            for(auto& ch : bestSols) {
-                cout << "bestSols Before Merge: " << (int) ch.first << " " << ch.second << endl;
+                
             }
 
             this->population.clear();
             // this->population.merge(offsprings);
             // this->population.merge(bestSols);
             this->population = mergeMultimaps(offsprings, bestSols);
-
-            for(auto& ch : population){
-                cout << "New Generation: " << (int) ch.first << " " << ch.second << endl;
-            }
-            
-            for(auto& ch : offsprings) {
-                cout << "Offsprings After Merge: " << (int) ch.first << " " << ch.second << endl;
-            }
-            for(auto& ch : bestSols) {
-                cout << "bestSols After Merge: " << (int) ch.first << " " << ch.second << endl;
-            }
-
-            auto bestSolution = population.rbegin();
-
-            cout << "Best Solution: " << bestSolution->second << endl; 
-            cout << "Actual Fitness: " << MAX_FITNESS - (int) bestSolution->first;
-            cout << '\n';
-            printCoreTimes(bestSolution->second, testCase.getTasksTimes());
         }
+        auto bestSolution = population.rbegin();
+        cout << "\nBest Solution: " << bestSolution->second << endl; 
+        cout << "Actual Fitness(Total Execution Time): " << MAX_FITNESS - (int) bestSolution->first << '\n';
+        printCoreTimes(bestSolution->second, testCase.getTasksTimes());
     }
 
 };
 
 int main(){
-    // GeneticAlgorithm algo;
-
     vector<int> numbers = readFromFile("./docs/data.txt");
 
     // Check if there was an error reading the file
@@ -447,13 +391,13 @@ int main(){
         cout << "Error during reading the file" << endl;
         return 1; // Exit early due to file reading error
     }
-    // All testCases as a object
+    // All testCases as an object
     vector<TestCase> testCases = handleTestCasesData(numbers);
     for (int i = 0; i < testCases.size(); i++) {
-        cout << "\nTest case " << i + 1 << ": " << endl;
+        cout << "\n_______________________________ Test Case " << i << "___________________________________" << endl;
         testCases[i].displayTestCase();
         auto algo = new GeneticAlgorithm(10, testCases[i]);
         algo->runGeneticAlgo();
-        cout << "\n___________________________________________\n";
+        cout << "______________________________________________________________________________\n";
     }
 }
