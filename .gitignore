@@ -1,0 +1,11 @@
+# Ignore editor-specific directories and files
+.vscode/
+
+# Ignore all executables
+*.exe
+a.out
+
+# Optionally, ignore all object files and other compiled code
+*.o
+*.obj
+*.out
