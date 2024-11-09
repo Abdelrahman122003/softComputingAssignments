@@ -12,7 +12,8 @@
 
 using namespace std;
 
-#define NUM_GENERATIONS 200
+#define NUM_GENERATIONS 100
+#define POPULATION_SIZE 50
 
 // Function to merge two multimaps
 template <typename KeyType, typename ValueType>
@@ -344,7 +345,6 @@ private:
         cout << ", Core 2 Execution Time: " << core2_time << endl;
     }
 
-
     void runGeneticAlgo(){
         srand(time(0));
         random_device rd;  // Get a seed from the hardware
@@ -356,7 +356,7 @@ private:
             multimap<double, vector<int>> selected_chromosomes = selection(population.size() / 3);
             multimap<double, vector<int>> offsprings;
             double random_prop = dis(gen);
-            double pc = 0.5;
+            double pc = 0.6;
             if (random_prop <= pc){
                 offsprings = crossover(selected_chromosomes);
             }else {
@@ -364,12 +364,11 @@ private:
             }
 
             random_prop = dis(gen);
-            double pm = 0.2;
+            double pm = 0.08;
             if (random_prop <= pm){
                 for (auto& offspring : offsprings) {
                     flip_bit_mutation((pair<double ,vector<int>>&) offspring);
                 }
-                
             }
 
             this->population.clear();
@@ -389,7 +388,8 @@ private:
         );
 
         if (isInfeasibleSols){
-            int newMax = testCase.getMaxTime() * 1.2 + 10;
+            int newMax = testCase.getMaxTime() * 1.5 + 10;
+            if (newMax > MAX_FITNESS) newMax = MAX_FITNESS;
             cout << "We Cannot Reach a Solution Can Satisfy this Max Time ("<< testCase.getMaxTime() << ") Trying to Run Again with Max Time Equal to " << newMax << "...\n";
             testCase.setMaxTime(newMax);
             runGeneticAlgo();
@@ -401,7 +401,6 @@ private:
         cout << "Actual Fitness(Total Execution Time): " << MAX_FITNESS - (int) bestSolution->first << '\n';
         printCoreTimes(bestSolution->second, testCase.getTasksTimes());
     }
-
 };
 
 int main(){
@@ -417,7 +416,7 @@ int main(){
     for (int i = 0; i < testCases.size(); i++) {
         cout << "\n_______________________________ Test Case " << i << "___________________________________" << endl;
         testCases[i].displayTestCase();
-        auto algo = new GeneticAlgorithm(10, testCases[i]);
+        auto algo = new GeneticAlgorithm(POPULATION_SIZE, testCases[i]);
         algo->runGeneticAlgo();
         cout << "______________________________________________________________________________\n";
     }
