@@ -194,6 +194,13 @@ class Algo{
             cout << "-------------------------------------------------------------\n";
         }
     }
+    double calcFitness(vector<int> chromsome){
+        double fitness = 0;
+        for (const int &val : chromsome) {
+            fitness += val;
+        }
+        return fitness;
+    }
     void tournmentSelection(){
         // i will compare two individual two two two two 
         // first two 
@@ -215,7 +222,66 @@ class Algo{
             }
             cout << "\n--------------------------------------------------\n";
         }
-    } 
+    }
+    multimap<double, vector<int>> crossover(multimap<double, vector<int>> curr_generation) {
+        multimap<double, vector<int>> offsprings;
+
+        // Even Population Size
+        if (curr_generation.size() % 2 == 0) {
+            auto it = curr_generation.begin();
+            while (it != curr_generation.end()) {
+                auto next_it = next(it);
+                if (next_it != curr_generation.end()) {
+                    offsprings.merge(_crossover(it->second, next_it->second)); // Perform crossover
+                }
+                ++it;  // Move to the next parent pair
+            }
+        }
+        // Odd Population Size
+        else {
+            auto it = curr_generation.begin();
+            while (next(it) != prev(curr_generation.end())) {
+                auto next_it = next(it);
+                offsprings.merge(_crossover(it->second, next_it->second)); // Perform crossover
+                ++it;  // Move to the next parent pair
+            }
+
+            // Handle the last individual in the case of odd population size
+            multimap<double, vector<int>> bestOffsprings;
+            int i = 0;
+            for (auto it = offsprings.rbegin(); it != offsprings.rend() && i < curr_generation.size(); ++it) {
+                bestOffsprings.emplace(it->first, it->second); // Add to the result
+                ++i;
+            }
+            return bestOffsprings;
+        }
+
+        return offsprings;  // Return the new offsprings after crossover
+    }
+    multimap<double, vector<int>> _crossover(vector<int> &parent1, vector<int> &parent2)
+    {
+        int crossover_point1 = rand() % parent1.size();
+        int crossover_point2 = rand() % parent1.size();
+        if(crossover_point2 < crossover_point1) swap(crossover_point1, crossover_point2);
+        vector<int> child1 = parent1;
+        vector<int> child2 = parent2;
+
+        for (int i = crossover_point1; i < crossover_point2; ++i)
+        {
+            child1[i] = parent2[i];
+            child2[i] = parent1[i];
+        }
+
+        multimap<double, vector<int>> offsprings;
+        vector<vector<int>> childs {child1, child2};
+
+        for (vector<int>& chrom : childs){
+            int fitness = calcFitness(chrom);
+            offsprings.emplace(fitness, chrom);
+        }
+
+        return offsprings;
+    }
 };
 
 int main(){
