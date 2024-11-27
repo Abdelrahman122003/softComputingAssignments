@@ -9,7 +9,9 @@
 #include <algorithm>
 #include <numeric>  // For std::accumulate
 #include <cmath>  // for std::abs
+#include <random>  // For better random number generation
 #include <fstream>
+
 using namespace std;
 
 template <typename T>
@@ -159,12 +161,12 @@ class Algo{
         uniform_real_distribution<float> dist(range.first, range.second);
         return dist(gen); // Generate a random float in the range
     }
-    // function to initalize chemical 
+    // function to initialize chemical 
     void makeChemicalMix(){
         for(int i = 0; i < testCase.getNumChemicals(); i++)
             chemicalMix[i] = getproportion(testCase.getChemicalRanges()[i]);
     }
-    // function to make inital population
+    // function to make initial population
     void initalPopulation(){
         for(int i = 0; i < popSize; i++)
         {            
@@ -174,7 +176,6 @@ class Algo{
     }
     // function to calculate fitness
     float calcFitness(){
-        // 
         float fitness = 0.0f;
         // 0.2565 = *1000 = 256.5 => round(256.5) => 257 => /10 => 25.7
         for(int i  = 0;i < testCase.getNumChemicals();i++){
@@ -188,7 +189,7 @@ class Algo{
         for(int i = 0; i < popSize; i++)
         {
             chemicalMix = population[i].first;
-            cout  <<  chemicalMix;
+            cout << chemicalMix;
             population[i].second = calcFitness();
             cout << population[i].second << endl;
             cout << "-------------------------------------------------------------\n";
@@ -215,7 +216,43 @@ class Algo{
             }
             cout << "\n--------------------------------------------------\n";
         }
-    } 
+    }
+
+    // chromosome, int rangeIndx
+    void chromosomeMutation(vector<float>& chromosome, int generationNum){
+        int i = 0;
+        for(auto& gene : chromosome){
+            double pm = this->getproportion({0.0, 1.0});
+            if (pm <= 0.05){
+                gene = nonUniformGeneMutation(gene, generationNum, testCase.getChemicalRanges()[i]);
+            }
+            ++i;
+        }
+    }
+
+    double nonUniformGeneMutation(double gene, int generationNum, pair<float, float> geneRange, const int depFactor = 2){
+        const int MAX_GENERATION_NUMBER = 100;    
+        double R1 = this->getproportion({0.0, 1.0});
+        double y = (R1 <= 0.5)? (gene - geneRange.first) : (geneRange.second - gene);
+        double R2 = this->getproportion({0.0, 1.0});
+        y *= (1 - pow(R2, pow((1 - generationNum / MAX_GENERATION_NUMBER), depFactor)));
+        return (R1 <= 0.5)? (gene - y) : (gene + y);
+        // Design Two : 
+        // double ch = (1 - pow(R2, pow((1 - generationNum / MAX_GENERATION_NUMBER), depFactor)));
+        // if (R1 <= 0.5) {
+        //     // Y = X - LB
+        //     double y = (gene - geneRange.first);
+        //     y *= ch;
+        //     // X = X - Y => X become smaller
+        //     gene -= y;
+        // } else {
+        //     double y = (geneRange.second - gene);
+        //     y *= ch;
+        //     // X = X + Y => X becomes bigger
+        //     gene += y;
+        // }
+        // return gene;
+    }
 };
 
 int main(){
@@ -232,10 +269,8 @@ int main(){
     //     testCases[i].displayTestCase();
     //     cout << "__________________________________________________\n";
     // }
-
     Algo algo(testCases[0], 6);
     algo.initalPopulation();
     algo.calcPopulationFitness();
     algo.tournmentSelection();
-    
 }
