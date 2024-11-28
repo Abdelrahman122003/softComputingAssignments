@@ -359,7 +359,7 @@ private:
             double pc = 0.6;
             if (random_prop <= pc){
                 offsprings = crossover(selected_chromosomes);
-            }else {
+            } else {
                 offsprings = selected_chromosomes;
             }
 

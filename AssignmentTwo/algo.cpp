@@ -162,9 +162,38 @@ class Algo{
         return dist(gen); // Generate a random float in the range
     }
     // function to initialize chemical 
-    void makeChemicalMix(){
+    void makeChemicalMix(){ 
+// 3 100.0   
+// 5.0 25.0 10.0 40.0 15.0 35.0   
+// 8.5 6.2 7.8 
         for(int i = 0; i < testCase.getNumChemicals(); i++)
             chemicalMix[i] = getproportion(testCase.getChemicalRanges()[i]);
+        float total = accumulate(chemicalMix.begin(), chemicalMix.end(), 0);
+        if (testCase.getTotalProportion() >= total) {
+            float remaining = testCase.getTotalProportion() - total;
+
+            while (remaining > 0) {
+                float distributed = 0.0f; // Track how much is distributed in this iteration
+
+                for (int i = 0; i < testCase.getNumChemicals(); i++) {
+                    auto range = testCase.getChemicalRanges()[i];
+                    float maxAddition = range.second - chemicalMix[i]; // How much can this element increase without exceeding the max range
+
+                    if (maxAddition > 0) {
+                        float addition = min(maxAddition, remaining); // Add the smaller of the remaining amount or max addition
+                        chemicalMix[i] += addition;
+                        distributed += addition;
+                        remaining -= addition;
+
+                        if (remaining <= 0) break; // Stop if nothing remains to distribute
+                    }
+                }
+                // If no distribution was possible in this iteration, break to avoid infinite loops
+                if (distributed == 0) break;
+            }
+        } else if (testCase.getTotalProportion() <= total) {
+            // Continue this Part Later
+        }
     }
     // function to make initial population
     void initalPopulation(){
@@ -174,6 +203,7 @@ class Algo{
             population[i].first = chemicalMix;
         }
     }
+
     // function to calculate fitness
     float calcFitness(){
         float fitness = 0.0f;
@@ -185,6 +215,7 @@ class Algo{
         }
         return fitness;
     }
+
     void calcPopulationFitness(){
         for(int i = 0; i < popSize; i++)
         {
@@ -215,6 +246,9 @@ class Algo{
         for (int i = 0;i < iterations; i++)
             selectedAddress[i] = (population[j].second > population[j+1].second)?j+1: j, j += 2;
         cout << selectedAddress << endl;
+
+
+        // BEST + REST => SELECT => CROSSOVER => MUTUATION => OFFSPRINGS
     }
     void printInitalPopulation(){
         for(int i = 0 ; i < popSize; i++){
@@ -258,6 +292,7 @@ class Algo{
 
         return offsprings;  // Return the new offsprings after crossover
     }
+
     multimap<double, vector<float>> _crossover(vector<float> &parent1, vector<float> &parent2)
     {
         int crossover_point1 = rand() % parent1.size();
@@ -276,7 +311,8 @@ class Algo{
         vector<vector<float>> childs {child1, child2};
 
         for (vector<float>& chrom : childs){
-            int fitness = calcFitness(chrom);
+            chemicalMix = chrom;
+            int fitness = calcFitness();
             offsprings.emplace(fitness, chrom);
         }
 
