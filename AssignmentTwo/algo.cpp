@@ -131,7 +131,8 @@ class Algo{
     int popSize;
     TestCase testCase;
     vector<float>chemicalMix;
-    vector<pair<vector<float>, float>>population;
+    vector<pair<vector<float>, float>>population,best;
+    vector<pair<vector<float>, bool>>offSprings;
     // store index of selected individual instead of store all data 
     vector<int>selectedAddress;
     
@@ -160,6 +161,36 @@ class Algo{
         mt19937 gen(rd()); // Mersenne Twister RNG
         uniform_real_distribution<float> dist(range.first, range.second);
         return dist(gen); // Generate a random float in the range
+    }
+    // function to calcualte best of population
+    void getBest(){
+        int bestSize = population.size() * 1/4;
+        best = vector<pair<vector<float>,  float>>(bestSize);
+        sort(population.begin(), population.end(),  [](const auto& a, const auto& b) {
+        return a.second > b.second;
+    });
+        for(int i = 0; i < bestSize; i++){
+            best[i] = population[i];
+        }
+        cout << "best ===> \n";
+        for(auto [k, v]: best){
+            cout << k << endl;
+        }
+    }
+    void getOffSprings(){
+        int offSpringsSize = population.size() * 3/4, start = population.size() * 1/4;
+        offSprings = vector<pair<vector<float>,  bool>>(offSpringsSize,
+        make_pair(vector<float>(testCase.getNumChemicals()), false));
+        // cout << "start : " << start << "    size : " << population.size() << endl;
+        // cout << "population[2] :  "  << population[2].first << endl;
+        int j = 0;
+        for (int i = start;  i < population.size();i++)
+            offSprings[j++].first = population[i].first;
+    
+        cout << "offSprings ===> \n";
+        for(auto [k, v]: offSprings){
+            cout << k << endl;
+        }
     }
     // function to initialize chemical 
     void makeChemicalMix(){ 
@@ -239,15 +270,19 @@ class Algo{
         // second two 
         // and so on ...
         // if size odd => so i make number of iteration before start the loop
-        int iterations = popSize / 2;
+        int iterations = offSprings.size() / 2;
         // in case 5 => will be make 2 iterations 
         // in case 6 => make 3 iterations
         int j = 0;
-        for (int i = 0;i < iterations; i++)
-            selectedAddress[i] = (population[j].second > population[j+1].second)?j+1: j, j += 2;
-        cout << selectedAddress << endl;
-
-
+        for (int i = 0;i < iterations; i++){
+            int selected = (population[j].second > population[j+1].second)?j+1: j;
+            j += 2;
+            offSprings[selected].second = true;
+        }
+        cout << "selected chromosmes ===> \n";
+        for(auto [k, v]: offSprings){
+            cout << k << " " << v << endl;
+        }
         // BEST + REST => SELECT => CROSSOVER => MUTUATION => OFFSPRINGS
     }
     void printInitalPopulation(){
@@ -370,8 +405,10 @@ int main(){
     //     testCases[i].displayTestCase();
     //     cout << "__________________________________________________\n";
     // }
-    Algo algo(testCases[0], 6);
+    Algo algo(testCases[0], 8);
     algo.initalPopulation();
     algo.calcPopulationFitness();
+    algo.getBest();
+    algo.getOffSprings();
     algo.tournmentSelection();
 }
