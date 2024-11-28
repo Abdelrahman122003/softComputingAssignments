@@ -48,5 +48,5 @@
 		"streambuf": "cpp",
 		"typeinfo": "cpp"
 	},
-	"cSpell.words": ["getproportion"]
+	"cSpell.words": ["chrom", "getproportion", "tournment"]
 }

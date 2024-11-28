@@ -264,7 +264,7 @@ private:
             }
         } 
         // Odd
-        else {
+        else {            
             for (auto it = curr_generation.begin(); it != prev(curr_generation.end()); ++it){
                 auto next_it = next(it);
                 // offsprings = mergeMultimaps(offsprings, _crossover(it->second, next_it->second));

@@ -14,6 +14,9 @@
 
 using namespace std;
 
+#define NUM_GENERATIONS 100
+#define POPULATION_SIZE 50
+
 template <typename T>
 ostream& operator<<(ostream& os, const vector<T>& vec)
 {
@@ -132,7 +135,7 @@ class Algo{
     TestCase testCase;
     vector<float>chemicalMix;
     vector<pair<vector<float>, float>>population,best;
-    vector<pair<vector<float>, bool>>offSprings;
+    vector<pair<vector<float>, float>>offSprings;
     // store index of selected individual instead of store all data 
     vector<int>selectedAddress;
     
@@ -166,30 +169,33 @@ class Algo{
     void getBest(){
         int bestSize = population.size() * 1/4;
         best = vector<pair<vector<float>,  float>>(bestSize);
+
         sort(population.begin(), population.end(),  [](const auto& a, const auto& b) {
-        return a.second > b.second;
-    });
+            return a.second < b.second;
+        });
+
         for(int i = 0; i < bestSize; i++){
             best[i] = population[i];
         }
+
         cout << "best ===> \n";
         for(auto [k, v]: best){
-            cout << k << endl;
+            cout << k << " " << v <<endl;
         }
     }
     void getOffSprings(){
         int offSpringsSize = population.size() * 3/4, start = population.size() * 1/4;
-        offSprings = vector<pair<vector<float>,  bool>>(offSpringsSize,
-        make_pair(vector<float>(testCase.getNumChemicals()), false));
+        offSprings = vector<pair<vector<float>,  float>>(offSpringsSize,
+        make_pair(vector<float>(testCase.getNumChemicals()), 0.0f));
         // cout << "start : " << start << "    size : " << population.size() << endl;
         // cout << "population[2] :  "  << population[2].first << endl;
         int j = 0;
         for (int i = start;  i < population.size();i++)
-            offSprings[j++].first = population[i].first;
-    
+            offSprings[j++] = population[i];
+        
         cout << "offSprings ===> \n";
         for(auto [k, v]: offSprings){
-            cout << k << endl;
+            cout << k << " " <<  v << endl;
         }
     }
     // function to initialize chemical 
@@ -199,8 +205,9 @@ class Algo{
 // 8.5 6.2 7.8 
         for(int i = 0; i < testCase.getNumChemicals(); i++)
             chemicalMix[i] = getproportion(testCase.getChemicalRanges()[i]);
+
         float total = accumulate(chemicalMix.begin(), chemicalMix.end(), 0);
-        if (testCase.getTotalProportion() >= total) {
+        if (testCase.getTotalProportion() > total) {
             float remaining = testCase.getTotalProportion() - total;
 
             while (remaining > 0) {
@@ -222,8 +229,26 @@ class Algo{
                 // If no distribution was possible in this iteration, break to avoid infinite loops
                 if (distributed == 0) break;
             }
-        } else if (testCase.getTotalProportion() <= total) {
-            // Continue this Part Later
+        } else if (testCase.getTotalProportion() < total) {
+            float remaining = total - testCase.getTotalProportion();
+            while (remaining > 0) {
+                float distributed = 0.0f; // Track how much is distributed in this iteration
+                for (int i = 0; i < testCase.getNumChemicals(); i++) {
+                    auto range = testCase.getChemicalRanges()[i];
+                    // L => 5, i => 50, max substract 40 
+                    float maxSubstract = chemicalMix[i] - range.first; // How much can this element increase without exceeding the max range
+
+                    if (maxSubstract > 0) {
+                        float substract = min(maxSubstract, remaining); // Add the smaller of the remaining amount or max addition
+                        chemicalMix[i] -= substract;
+                        distributed += substract;
+                        remaining -= substract;
+                        if (remaining <= 0) break; // Stop if nothing remains to distribute
+                    }
+                }
+                // If no distribution was possible in this iteration, break to avoid infinite loops
+                if (distributed == 0) break;
+            }
         }
     }
     // function to make initial population
@@ -257,13 +282,7 @@ class Algo{
             cout << "-------------------------------------------------------------\n";
         }
     }
-    // double calcFitness(vector<int> chromsome){
-    //     double fitness = 0;
-    //     for (const int &val : chromsome) {
-    //         fitness += val;
-    //     }
-    //     return fitness;
-    // }
+
     void tournmentSelection(){
         // i will compare two individual two two two two 
         // first two 
@@ -275,60 +294,60 @@ class Algo{
         // in case 6 => make 3 iterations
         int j = 0;
         for (int i = 0;i < iterations; i++){
-            int selected = (population[j].second > population[j+1].second)?j+1: j;
+            int notSelected = (offSprings[j].second > offSprings[j+1].second)? j : j + 1;
             j += 2;
-            offSprings[selected].second = true;
+            offSprings[notSelected].second = -1.0f;
         }
+        // Discard not selected chromosomes
+        offSprings.erase(remove_if(offSprings.begin(), offSprings.end(), [](const pair<vector<float>, float>& p) {return roundf(p.second) == -1.0f;}),
+        offSprings.end());
+
         cout << "selected chromosmes ===> \n";
         for(auto [k, v]: offSprings){
             cout << k << " " << v << endl;
         }
-        // BEST + REST => SELECT => CROSSOVER => MUTUATION => OFFSPRINGS
+        // BEST + REST => SELECT => CROSSOVER => MUTATION => OFFSPRINGS
     }
     void printInitalPopulation(){
         for(int i = 0 ; i < popSize; i++){
             for(int j = 0; j < testCase.getNumChemicals(); j++){
-                cout << population[i].first[j] << " ";
+                cout << population[i].first[j];
             }
             cout << "\n--------------------------------------------------\n";
         }
     }
-    multimap<double, vector<float>> crossover(multimap<double, vector<float>> curr_generation) {
-        multimap<double, vector<float>> offsprings;
-        // Even Population Size
-        if (curr_generation.size() % 2 == 0) {
-            auto it = curr_generation.begin();
-            while (it != curr_generation.end()) {
+    vector<pair<vector<float>, float>> crossover() {
+        vector<pair<vector<float>, float>> offsprings;
+        vector<pair<vector<float>, float>> childs;
+        // Even 
+        if (this->offSprings.size() % 2 == 0){
+            for (auto it = this->offSprings.begin(); it != this->offSprings.end(); ++it){
                 auto next_it = next(it);
-                if (next_it != curr_generation.end()) {
-                    offsprings.merge(_crossover(it->second, next_it->second)); // Perform crossover
-                }
-                ++it;  // Move to the next parent pair
+                childs = _crossover(it->first, next_it->first);
+                offsprings.insert(offsprings.end(), childs.begin(), childs.end());
+                ++it;
             }
-        }
-        // Odd Population Size
-        else {
-            auto it = curr_generation.begin();
-            while (next(it) != prev(curr_generation.end())) {
+        } 
+        // Odd
+        else {            
+            for (auto it = this->offSprings.begin(); it != prev(this->offSprings.end()); ++it){
                 auto next_it = next(it);
-                offsprings.merge(_crossover(it->second, next_it->second)); // Perform crossover
-                ++it;  // Move to the next parent pair
+                childs = _crossover(it->first, next_it->first);
+                offsprings.insert(offsprings.end(), childs.begin(), childs.end());
             }
 
-            // Handle the last individual in the case of odd population size
-            multimap<double, vector<float>> bestOffsprings;
+            vector<pair<vector<float>, float>> bestOffsprings;
             int i = 0;
-            for (auto it = offsprings.rbegin(); it != offsprings.rend() && i < curr_generation.size(); ++it) {
-                bestOffsprings.emplace(it->first, it->second); // Add to the result
+            for (auto it = offsprings.begin(); it != offsprings.end() && i < this->offSprings.size(); ++it) { 
+                bestOffsprings.emplace_back(it->first, it->second); // Add to the result
                 ++i;
             }
             return bestOffsprings;
         }
-
-        return offsprings;  // Return the new offsprings after crossover
+        return offsprings;
     }
 
-    multimap<double, vector<float>> _crossover(vector<float> &parent1, vector<float> &parent2)
+    vector<pair<vector<float>, float>> _crossover(vector<float> &parent1, vector<float> &parent2)
     {
         int crossover_point1 = rand() % parent1.size();
         int crossover_point2 = rand() % parent1.size();
@@ -342,13 +361,12 @@ class Algo{
             child2[i] = parent1[i];
         }
 
-        multimap<double, vector<float>> offsprings;
+        vector<pair<vector<float>, float>> offsprings;
         vector<vector<float>> childs {child1, child2};
 
         for (vector<float>& chrom : childs){
             chemicalMix = chrom;
-            int fitness = calcFitness();
-            offsprings.emplace(fitness, chrom);
+            offsprings.emplace_back(chrom, calcFitness());
         }
 
         return offsprings;
@@ -389,6 +407,39 @@ class Algo{
         // }
         // return gene;
     }
+
+    void runAlgo(){
+        this->initalPopulation();
+        this->calcPopulationFitness();
+        for (int i = 0; i < NUM_GENERATIONS; ++i){
+            this->getBest();
+            this->getOffSprings();
+            this->tournmentSelection();
+            double pc = this->getproportion({0.0, 1.0});
+
+            if (pc <= 0.5){
+                this->offSprings = this->crossover();
+            } 
+
+            for (auto& [chromosome, p] : this->offSprings){
+                this->chromosomeMutation(chromosome, i);
+            }
+            this->population.clear();
+            this->population = this->best; 
+            this->population.insert(population.end(), this->offSprings.begin(), this->offSprings.end());
+
+            cout << "New Generation: " << endl;
+            for (auto& [chromosome, p] : this->population){
+                cout << chromosome << " " << p << endl;
+            }
+        }
+        pair<vector<float>, float> bestSolution = population[0];
+        cout << "Best Solution: " << endl;
+        cout << bestSolution.first << " " << bestSolution.second << endl;
+        vector<float> vec = bestSolution.first;
+        double totalProportion = accumulate(vec.begin(), vec.end(), 0);
+        cout << "Total Proportion: " << totalProportion << endl;
+    }
 };
 
 int main(){
@@ -406,9 +457,5 @@ int main(){
     //     cout << "__________________________________________________\n";
     // }
     Algo algo(testCases[0], 8);
-    algo.initalPopulation();
-    algo.calcPopulationFitness();
-    algo.getBest();
-    algo.getOffSprings();
-    algo.tournmentSelection();
+    algo.runAlgo();
 }
