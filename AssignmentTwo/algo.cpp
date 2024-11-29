@@ -1,5 +1,4 @@
 #include <iostream>
-#include <random>
 #include <utility>
 #include <vector>
 #include <string>
@@ -13,11 +12,14 @@
 #include <fstream>
 #include <algorithm>
 #include <iomanip>
+#include <sstream>
 
 using namespace std;
 
-#define NUM_GENERATIONS 100
-#define POPULATION_SIZE 50
+#define NUM_GENERATIONS 75
+#define POPULATION_SIZE 160
+
+ostringstream infeasibleSolution;
 
 template <typename T>
 ostream& operator<<(ostream& os, const vector<T>& vec)
@@ -58,7 +60,7 @@ vector<float> readFromFile(string file) {
 class TestCase{
     int num_chemical;
     float total_proportion;
-    vector<pair<float, float>>ranges;
+    vector<pair<float, float>> ranges;
     vector<float>costs;
     public:
     TestCase(){}
@@ -76,7 +78,6 @@ class TestCase{
     vector<pair<float, float>> getChemicalRanges(){
         return this->ranges;
     }
-    
 
     void setChemicalCost(float cost){
         this->costs.push_back(cost);
@@ -135,11 +136,11 @@ vector<TestCase> handleTestCasesData(vector<float> numbers) {
 class Algo{
     int popSize;
     TestCase testCase;
-    vector<float>chemicalMix;
-    vector<pair<vector<float>, float>>population,best;
-    vector<pair<vector<float>, float>>offSprings;
+    vector<float> chemicalMix;
+    vector<pair<vector<float>, float>> population,best;
+    vector<pair<vector<float>, float>> offSprings;
     // store index of selected individual instead of store all data 
-    vector<int>selectedAddress;
+    vector<int> selectedAddress;
     
     public:
     Algo(){}
@@ -168,7 +169,7 @@ class Algo{
         // Generate a random float in the range
         return round((dist(gen)) * 100.0f) / 100.0f; // Round to two decimal places
     }
-    // function to calcualte best of population
+    // function to calculate best of population
     void getBest(){
         int bestSize = round(population.size() * 0.25);
         best = vector<pair<vector<float>,  float>>(bestSize);
@@ -180,11 +181,6 @@ class Algo{
         for(int i = 0; i < bestSize; ++i){
             best[i] = population[i];
         }
-
-        cout << "best ===> \n";
-        for(auto [k, v]: best){
-            cout << k << " " << v <<endl;
-        }
     }
     void getOffSprings(){
         int start = best.size();
@@ -193,26 +189,19 @@ class Algo{
             offSpringsSize,
             make_pair(vector<float>(testCase.getNumChemicals()), 0.0f)
         );
-        // cout << "start : " << start << "    size : " << population.size() << endl;
-        // cout << "population[2] :  "  << population[2].first << endl;
         int j = 0;
         for (int i = start;i < population.size();++i)
             offSprings[j++] = population[i];
-        
-        cout << "offSprings ===> \n";
-        for(auto& [k, v]: offSprings){
-            cout << k << " " <<  v << endl;
-        }
     }
     // function to initialize chemical 
     void makeChemicalMix(){ 
-// 3 100.0   
-// 5.0 25.0 10.0 40.0 15.0 35.0   
-// 8.5 6.2 7.8 
         for(int i = 0; i < testCase.getNumChemicals(); i++)
             chemicalMix[i] = getproportion(testCase.getChemicalRanges()[i]);
+        adjustChromosome(chemicalMix);
+    }
 
-        float total = accumulate(chemicalMix.begin(), chemicalMix.end(), 0.0f);
+    void adjustChromosome(vector<float>& chromosome){
+        float total = accumulate(chromosome.begin(), chromosome.end(), 0.0f);
         if (testCase.getTotalProportion() > total) {
             float remaining = testCase.getTotalProportion() - total;
 
@@ -221,12 +210,12 @@ class Algo{
 
                 for (int i = 0; i < testCase.getNumChemicals(); i++) {
                     auto range = testCase.getChemicalRanges()[i];
-                    float maxAddition = range.second - chemicalMix[i]; // How much can this element increase without exceeding the max range
+                    float maxAddition = range.second - chromosome[i]; // How much can this element increase without exceeding the max range
 
                     if (maxAddition > 0) {
                         float addition = min(maxAddition, remaining); // Add the smaller of the remaining amount or max addition
-                        chemicalMix[i] += addition;
-                        chemicalMix[i] = (round(chemicalMix[i]) * 100.0f) / 100.0f;
+                        chromosome[i] += addition;
+                        // chromosome[i] = (round(chromosome[i]) * 100.0f) / 100.0f;
                         distributed += addition;
                         remaining -= addition;
 
@@ -243,12 +232,12 @@ class Algo{
                 for (int i = 0; i < testCase.getNumChemicals(); i++) {
                     auto range = testCase.getChemicalRanges()[i];
                     // L => 5, i => 50, max substract 40 
-                    float maxSubstract = chemicalMix[i] - range.first; // How much can this element increase without exceeding the max range
+                    float maxSubstract = chromosome[i] - range.first; // How much can this element increase without exceeding the max range
 
                     if (maxSubstract > 0) {
                         float substract = min(maxSubstract, remaining); // Add the smaller of the remaining amount or max addition
-                        chemicalMix[i] -= substract;
-                        chemicalMix[i] = (round(chemicalMix[i]) * 100.0f) / 100.0f;
+                        chromosome[i] -= substract;
+                        // chromosome[i] = (round(chromosome[i]) * 100.0f) / 100.0f;
                         distributed += substract;
                         remaining -= substract;
                         if (remaining <= 0) break; // Stop if nothing remains to distribute
@@ -271,11 +260,9 @@ class Algo{
     // function to calculate fitness
     float calcFitness(){
         float fitness = 0.0f;
-        // 0.2565 = *1000 = 256.5 => round(256.5) => 257 => /10 => 25.7
-        for(int i  = 0;i < testCase.getNumChemicals();i++){
-            // float calculatedValue = round(chemicalMix[i] * 10)/10; 
-            // cout << "Original Value : " << chemicalMix[i] << "  Calculated Value : " << calculatedValue << endl;
-            fitness += (round(chemicalMix[i] * 10)/10) * testCase.getChemicalCosts()[i];
+        // 25.65 = *10 = 256.5 => round(256.5) => 257 => /10 => 25.7
+        for(int i  = 0; i < testCase.getNumChemicals(); i++){
+            fitness += (round(chemicalMix[i] * 10.0f) / 10.0f) * testCase.getChemicalCosts()[i];
         }
         return fitness;
     }
@@ -284,10 +271,7 @@ class Algo{
         for(int i = 0; i < popSize; i++)
         {
             chemicalMix = population[i].first;
-            cout << chemicalMix;
             population[i].second = calcFitness();
-            cout << population[i].second << endl;
-            cout << "-------------------------------------------------------------\n";
         }
     }
 
@@ -309,11 +293,6 @@ class Algo{
         // Discard not selected chromosomes
         offSprings.erase(remove_if(offSprings.begin(), offSprings.end(), [](const pair<vector<float>, float>& p) {return roundf(p.second) == -1.0f;}),
         offSprings.end());
-
-        cout << "selected chromosmes ===> \n";
-        for(auto [k, v]: offSprings){
-            cout << k << " " << v << endl;
-        }
         // BEST + REST => SELECT => CROSSOVER => MUTATION => OFFSPRINGS
     }
     void printInitalPopulation(){
@@ -332,10 +311,6 @@ class Algo{
             for (int i = 0; i < this->offSprings.size(); i += 2) {
                 childs = _crossover(this->offSprings[i].first, this->offSprings[i + 1].first);
                 offsprings.insert(offsprings.end(), childs.begin(), childs.end());
-            }
-            for (auto chrom : offsprings){
-                cout << "Even Crossover: " << endl;
-                cout << chrom.first << " " << chrom.second << endl;
             }
         } 
         // Odd
@@ -375,9 +350,10 @@ class Algo{
         vector<pair<vector<float>, float>> offsprings;
         vector<vector<float>> childs {child1, child2};
 
-        for (vector<float> chrom : childs){
+        for (vector<float>& chrom : childs){
             chemicalMix = chrom;
-            offsprings.emplace_back(chrom, calcFitness());
+            adjustChromosome(chemicalMix);
+            offsprings.emplace_back(chemicalMix, calcFitness());
         }
 
         return offsprings;
@@ -390,13 +366,13 @@ class Algo{
         for(auto& gene : chromosome.first){
             double pm = this->getproportion({0.0, 1.0});
             if (pm <= 0.05){
-                cout << "MUTATIONNNN\n";
                 isChanged = true;
                 gene = nonUniformGeneMutation(gene, generationNum, testCase.getChemicalRanges()[i]);
             }
             ++i;
         }
         if (isChanged){
+            adjustChromosome(chromosome.first);
             chemicalMix = chromosome.first; chromosome.second = calcFitness();
         }
     }
@@ -424,8 +400,52 @@ class Algo{
         // }
         // return gene;
     }
+    pair<vector<float>, float>* handleProportionConstraint(){
+        double lowerBoundSum = 0.0, upperBoundSum = 0.0;
+        for (const auto& range : testCase.getChemicalRanges()) {
+            lowerBoundSum += range.first; upperBoundSum += range.second;
+        }   
+        double totalProportion = testCase.getTotalProportion();
 
-    pair<vector<float>, float> runAlgo(){
+        string message;
+        double newProportion;
+        bool useLowerBounds;
+
+        // Check for infeasible solutions
+        if (totalProportion < lowerBoundSum) {
+            message = "Total Proportion less than Sum of Lower Bounds of chemicals.";
+            newProportion = lowerBoundSum;
+            useLowerBounds = true;
+        } else if (totalProportion > upperBoundSum) {
+            message = "Total Proportion higher than Sum of Upper Bounds of chemicals.";
+            newProportion = upperBoundSum;
+            useLowerBounds = false;
+        } else {
+            return nullptr;
+        }
+
+        infeasibleSolution << "Infeasible Solution Encountered:\n" << message << "\nAdjusting Total Proportion to " << fixed << setprecision(2) << newProportion << "\n\n";
+        cout << infeasibleSolution.str();
+        testCase.setTotalProportion(newProportion);
+
+        // Extract bounds based on the scenario
+        vector<float> adjustedRanges;
+        const auto& chemicalRanges = testCase.getChemicalRanges();
+        adjustedRanges.reserve(chemicalRanges.size());
+
+        transform(chemicalRanges.begin(),chemicalRanges.end(), back_inserter(adjustedRanges),
+            [useLowerBounds](const pair<float, float>& range) {
+                return useLowerBounds ? range.first : range.second;
+            }
+        );
+        chemicalMix = adjustedRanges;  
+        return new pair<vector<float>, float>(adjustedRanges, calcFitness());
+    } 
+
+    pair<vector<float>, float> runAlgo(){ 
+        auto sol = this->handleProportionConstraint();
+        if (sol != nullptr) return *sol;
+        
         this->initalPopulation();
         this->calcPopulationFitness();
         for (int i = 0; i < NUM_GENERATIONS; ++i){
@@ -434,8 +454,7 @@ class Algo{
             this->tournmentSelection();
             double pc = this->getproportion({0.0, 1.0});
 
-            if (pc <= 0.5){
-                cout << "CROOOS OVEEER\n";
+            if (pc <= 0.7){
                 auto temp = this->crossover();
                 this->offSprings.clear();
                 this->offSprings = temp;
@@ -449,11 +468,6 @@ class Algo{
             this->population = this->best; 
             this->population.insert(population.end(), this->offSprings.begin(), this->offSprings.end());
 
-            cout << "New Generation: " << endl;
-            for (auto& [chromosome, p] : this->population){
-                cout << chromosome << " " << p << endl;
-            }
-
             if (population.size() == 1) break;
 
             best.clear();
@@ -463,12 +477,6 @@ class Algo{
         pair<vector<float>, float> bestSolution = *min_element(population.begin(), population.end(),[](const auto& a, const auto& b) {
             return a.second <= b.second;
         });
-
-        cout << "Best Solution: " << endl;
-        cout << bestSolution.first << " " << bestSolution.second << endl;
-        vector<float> vec = bestSolution.first;
-        double totalProportion = accumulate(vec.begin(), vec.end(), 0.0);
-        cout << "Total Proportion: " << totalProportion << endl;
 
         return bestSolution;
     }
@@ -488,7 +496,10 @@ void writeIntoFile(int datasetNum, pair<vector<float>, float> bestSolution) {
 
     // Write the dataset number
     outFile << "Dataset " << datasetNum << endl;
-
+    outFile << infeasibleSolution.str();
+    // Clear the content and reset the state
+    infeasibleSolution.str("");   // Clear the content
+    infeasibleSolution.clear();   // Reset the state flags
     // Write the chemical proportions
     outFile << "Chemical Proportions: ";
     for (auto i = 0; i < bestSolution.first.size(); ++i) {
@@ -505,6 +516,7 @@ void writeIntoFile(int datasetNum, pair<vector<float>, float> bestSolution) {
     // Close the file
     outFile.close();
 }
+
 int main(){
     vector<float> numbers = readFromFile("./docs/tests.txt");
 
@@ -514,25 +526,18 @@ int main(){
         return 1; // Exit early due to file reading error
     }
     vector<TestCase> testCases = handleTestCasesData(numbers);
-    // for (int i = 0; i < testCases.size(); i++)
-    // {
-    //     testCases[i].displayTestCase();
-    //     cout << "__________________________________________________\n";
-    // }
-
     // clear ouputFile
     clearOutputFile();
-   for(int i = 0; i < testCases.size(); i++)
-   {
-        Algo algo(testCases[0], POPULATION_SIZE);
+    for(int i = 0; i < testCases.size(); i++)
+    {
+        Algo algo(testCases[i], POPULATION_SIZE);
+        cout << "__________________________ TEST CASE " << i << " ____________________________\n";
         pair<vector<float>, float> bestSolution = algo.runAlgo();
-        // double totalProportion = accumulate(bestSolution.first.begin(), bestSolution.first.end(), 0.0);
-        // cout << "Total Proportion: " << totalProportion << endl;
         writeIntoFile(i+1, bestSolution);
-
-   }
+        cout << "Best Solution: " << endl;
+        cout << bestSolution.first << " " << bestSolution.second << endl;
+        vector<float> vec = bestSolution.first;
+        double totalProportion = accumulate(vec.begin(), vec.end(), 0.0);
+        cout << "Total Proportion: " << totalProportion << "\n\n";
+    } 
 }
-
-// Dataset 1
-// Chemical Proportions: 20.5 40.0 39.5
-// Total Cost: 850.75

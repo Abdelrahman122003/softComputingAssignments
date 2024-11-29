@@ -1,9 +1,20 @@
 Dataset 1
-Chemical Proportions: 10.4 40.0 35.0
-Total Cost: 609.40
+Chemical Proportions: 23.5 79.4 17.1
+Total Cost: 825.41
 Dataset 2
-Chemical Proportions: 12.8 40.0 35.0
-Total Cost: 629.80
+Infeasible Solution Encountered:
+Total Proportion higher than Sum of Upper Bounds of chemicals.
+Adjusting Total Proportion to 190.00
+
+Chemical Proportions: 40.0 80.0 70.0
+Total Cost: 1382.00
 Dataset 3
-Chemical Proportions: 25.0 32.2 35.0
-Total Cost: 685.14
+Chemical Proportions: 5.9 39.9 34.2
+Total Cost: 564.29
+Dataset 4
+Infeasible Solution Encountered:
+Total Proportion less than Sum of Lower Bounds of chemicals.
+Adjusting Total Proportion to 30.00
+
+Chemical Proportions: 5.0 10.0 15.0
+Total Cost: 221.50
