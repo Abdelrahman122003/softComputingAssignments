@@ -12,6 +12,7 @@
 #include <random>  // For better random number generation
 #include <fstream>
 #include <algorithm>
+#include <iomanip>
 
 using namespace std;
 
@@ -424,7 +425,7 @@ class Algo{
         // return gene;
     }
 
-    void runAlgo(){
+    pair<vector<float>, float> runAlgo(){
         this->initalPopulation();
         this->calcPopulationFitness();
         for (int i = 0; i < NUM_GENERATIONS; ++i){
@@ -468,9 +469,42 @@ class Algo{
         vector<float> vec = bestSolution.first;
         double totalProportion = accumulate(vec.begin(), vec.end(), 0.0);
         cout << "Total Proportion: " << totalProportion << endl;
+
+        return bestSolution;
     }
 };
+void clearOutputFile(){
+    ofstream outFile("./docs/output.txt", ios::out);
+    outFile.close();
+}
 
+void writeIntoFile(int datasetNum, pair<vector<float>, float> bestSolution) {
+    // Open the file in output mode (overwrite the file's content)
+    ofstream outFile("./docs/output.txt", ios::app);
+    if (!outFile) {
+        cerr << "Error opening file!" << endl;
+        return;
+    }
+
+    // Write the dataset number
+    outFile << "Dataset " << datasetNum << endl;
+
+    // Write the chemical proportions
+    outFile << "Chemical Proportions: ";
+    for (auto i = 0; i < bestSolution.first.size(); ++i) {
+        outFile << fixed << setprecision(1) << bestSolution.first[i];
+        if (i < bestSolution.first.size() - 1) {
+            outFile << " ";
+        }
+    }
+    outFile << endl;
+
+    // Write the total cost
+    outFile << "Total Cost: " << fixed << setprecision(2) << bestSolution.second << endl;
+
+    // Close the file
+    outFile.close();
+}
 int main(){
     vector<float> numbers = readFromFile("./docs/tests.txt");
 
@@ -485,6 +519,20 @@ int main(){
     //     testCases[i].displayTestCase();
     //     cout << "__________________________________________________\n";
     // }
-    Algo algo(testCases[0], POPULATION_SIZE);
-    algo.runAlgo();
+
+    // clear ouputFile
+    clearOutputFile();
+   for(int i = 0; i < testCases.size(); i++)
+   {
+        Algo algo(testCases[0], POPULATION_SIZE);
+        pair<vector<float>, float> bestSolution = algo.runAlgo();
+        // double totalProportion = accumulate(bestSolution.first.begin(), bestSolution.first.end(), 0.0);
+        // cout << "Total Proportion: " << totalProportion << endl;
+        writeIntoFile(i+1, bestSolution);
+
+   }
 }
+
+// Dataset 1
+// Chemical Proportions: 20.5 40.0 39.5
+// Total Cost: 850.75
