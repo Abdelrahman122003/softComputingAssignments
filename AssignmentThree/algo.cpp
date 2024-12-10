@@ -25,8 +25,6 @@ ostream& operator<<(ostream& os, const vector<T>& vec)
     os << " ]";
     return os;  // Return the ostream object to allow chaining
 }
-
-
 // Objects 
 class Variable{
     string name;
@@ -102,13 +100,12 @@ class FuzzySet{
     vector<Fuzzy> fuzzySet;
 public:
     FuzzySet(){
-
     }
     void setName(string _name){
         name = _name;
     }
-    void setFuzzy(Fuzzy _fuzzy){
-        fuzzySet.push_back(_fuzzy);
+    void setFuzzySet(vector<Fuzzy> _fuzzy){
+        fuzzySet = _fuzzy;
     }
     string getName(){
        return name;
@@ -145,6 +142,27 @@ class Rule{
     }
 };
 
+class Crisp{
+    string variable;
+    int value;
+    public:
+    Crisp(){
+
+    }
+    void setName(string _variable){
+        variable = _variable;
+    }
+    void setValue(int _value){
+        value = _value;
+    }
+    string getName(){
+        return variable;
+    }
+    int getValue(){
+        return value;
+    }
+};
+
 string extractToken(string& str, char delimiter) {
     size_t pos = str.find(delimiter);
     // To ensure that pos not out of bound
@@ -158,12 +176,9 @@ string extractToken(string& str, char delimiter) {
 
 class Extraction
 {
-
     public:
     Extraction(){
-
     }
-    
     Variable extractVariableData(string variable) {
         Variable v;
         // Example input: proj_funding IN [0, 100]
@@ -222,10 +237,10 @@ class Extraction
 
 // ===> CODE FOR STORE RULES FUZZY LOGIC ALGO
 
-Rule extractRuleData(string rule){
-    Rule r;
-    // Example input: proj_funding high or exp_level expert => risk low
-
+    Rule extractRuleData(string rule){
+        Rule r;
+        // Example input: proj_funding high or exp_level expert => risk low
+    
         // 1) Extract the IN_VAR
         r.setVariable(extractToken(rule, ' '));
         r.setSet(extractToken(rule, ' '));
@@ -243,8 +258,6 @@ Rule extractRuleData(string rule){
         r.setSet(rule);
         return r;
     }
-
-
 };
 
 
@@ -295,10 +308,10 @@ class InputData{
         return variableName;
     }
     // ===> CODE FOR STORE FUZZY SET IN FUZZY LOGIC ALGO 
-    void fuzzySetInput(vector<Fuzzy>fuzzySet){
+    vector<Fuzzy> fuzzySetInput(){
         cout << "Enter the fuzzy set name, type (TRI/TRAP) and values: (Press x to finish)\n";
         string line;
-        // vector<Fuzzy>fuzzySet;
+        vector<Fuzzy>fuzzySet;
         while (true) {
             getline(cin, line);
             if (line.empty() || line == "x")  // Stop input on empty line
@@ -310,13 +323,13 @@ class InputData{
             f.getValues();
             cout << "-------------------------------------------------------------\n";
         }
+        return fuzzySet;
     }
 
     // ===> CODE FOR STORE RULES FUZZY LOGIC ALGO
-    void rulesInput(vector<Rule>rules){
+    void rulesInput(vector<Rule>&rules){
         cout << "Enter the rules in this format: (Press x to finish)\nLike: IN_variable set operator IN_variable set => OUT_variable set\n";
         string line;
-        // vector<Rule>rules;
         while (true) {
             getline(cin, line);
             if (line.empty() || line == "x")  // Stop input on empty line
@@ -330,10 +343,9 @@ class InputData{
         }
     }
     // ===> CODE FOR STORE VARIABLES IN FUZZY LOGIC ALGO 
-    void variablesInput(vector<Variable>variables){
+    void variablesInput(vector<Variable>&variables){
         cout << "Enter the variable's name, type (IN/OUT) and range ([lower, upper]): (Press x to finish)\n";
         string line;
-        // vector<Variable>variables;
         while (true) {
             getline(cin, line);
             if (line.empty() || line == "x")  // Stop input on empty line
@@ -348,8 +360,6 @@ class InputData{
         }
     }
 };
-
-
 class Ouput{
 public:
     Ouput(){
@@ -372,55 +382,6 @@ public:
         cout << "4- Run the simulation on crisp values.\n";
     }
 };
-class Algo{
-    vector<Variable> variables;
-    vector<Fuzzy> fuzzySets;
-    vector<Rule> rules;
-    Ouput output;
-    Extraction extraction;
-    InputData input;
-    public:
-    Algo(Extraction extractionData): extraction(extractionData), input(extractionData) {}
-    void run(){
-        while(true){
-                output.mainMenu();
-                int option = input.inputOption();
-                if(option == 1)
-                {
-                    output.optionsMenu();
-                    option = input.inputOption();
-                    if (option == 1){
-                        input.variablesInput(variables);
-                    }
-                    else if(option == 2){
-                        input.fuzzySetInput(fuzzySets);
-                    }else if(option == 3){
-                        input.rulesInput(rules);
-                    }
-                    else if(option == 4){
-                        //run
-                    map<string, double> fuzzifiedValues;
-                    for ( auto& var : variables) {
-                        if (var.getType() == "IN") {
-                            cout << var.getName() << ": ";
-                            int crispValue;
-                            cin >> crispValue;
-                        }
-                    }
-                }
-                else break;
-            }
-        }
-    }
-};
-
-int main(){
-    // ===> Test Variables input
-    // ===> Test Fuzzy Set input
-    // ===> Test Rules input
-    // handleRulesInput();
-}
-
 
 // Function for fuzzification using linear interpolation// Function for fuzzification using linear interpolation for triangle
 double triangleFuzzy(double x, double x1, double y1, double x2, double y2, double x3, double y3) {
@@ -457,11 +418,9 @@ double trapezoidalFuzzy(double x, double x1, double x2, double x3, double x4, do
 }
 
 
-
 // Fuzzify a value for a specific variable using fuzzy sets
 map<string, double> fuzzifyValue(int value, string variableName, vector<Fuzzy> fuzzySets) {
      map<string, double> fuzzifiedValues;
-
     // Iterate through each fuzzy set
     for (auto& fuzzy : fuzzySets) {
         vector<double> setValues = fuzzy.getValues();
@@ -547,76 +506,198 @@ double defuzzify(map<string, double>& aggregatedOutputs, vector<Fuzzy>& outputFu
 
     return (denominator == 0.0) ? 0.0 : numerator / denominator; // Avoid division by zero
 }
-// Run the fuzzy logic system
-void runFuzzySystem() {
-    // Step 1: Input crisp values for each input variable
-    map<string, double> fuzzifiedValues;
-    for ( auto& var : variables) {
-        if (var.getType() == "IN") {
-            cout << "Enter crisp value for " << var.getName() << " (range: [" << var.getLower() << ", " << var.getUpper() << "]): ";
-            int crispValue;
-            cin >> crispValue;
+class Algo{
+    vector<Variable> variables;
+    vector<FuzzySet>fuzzySets;
+    vector<Rule> rules;
+    // vector<Crisp> crispValues;
+    Ouput output;
+    Extraction extraction;
+    InputData input;
+    public:
+    Algo(){
+        
+    }
+    Algo(Extraction extractionData): input(extractionData) {}
 
-            // Get fuzzy sets associated with the variable
-            vector<Fuzzy> associatedFuzzySets;
-            for ( auto& fuzzy : fuzzySet) {
-                if (fuzzy.getName().find(var.getName()) != string::npos) {
-                    associatedFuzzySets.push_back(fuzzy);
+    void clearVectors(){
+        variables.clear();
+        fuzzySets.clear();
+        rules.clear();
+   }
+    void run() {
+    while (true) {
+        // Display the main menu and take the first option
+        output.mainMenu();
+        int mainOption = input.inputOption();
+
+        if (mainOption == 2) {
+            std::cout << "You are exiting.\n";
+            break;
+        }
+
+        // Begin the second loop for multiple user interactions
+        while (true) {
+            output.optionsMenu();
+            int option = input.inputOption();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            if (option == 1) {
+                input.variablesInput(variables);
+
+                for(auto var : variables){
+                    cout << var.getName() << endl;
+                    cout << var.getType() << endl;
+                    cout << var.getLower() << endl;
+                    cout << var.getUpper() << endl;
+                    cout << "-----------------------------------------\n";
                 }
+            } else if (option == 2) {
+                FuzzySet fuzzySet;
+                fuzzySet.setName(input.inputVariableName());
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                fuzzySet.setFuzzySet(input.fuzzySetInput());
+                fuzzySets.push_back(fuzzySet);
+                for(auto fuzzySet : fuzzySets){
+                    cout << fuzzySet.getName() << endl;
+                    for(auto fuzzy : fuzzySet.getFuzzySet()){
+                        cout << fuzzy.getName() << endl;
+                        cout << fuzzy.getType() << endl;
+                        cout << fuzzy.getValues() << endl;
+                    }
+                    cout << "------------------------------------------\n";
+                }
+            } else if (option == 3) {
+                input.rulesInput(rules);
+
+                for(auto rule : rules){
+                    cout << rule.getVariables() << endl;
+                    cout << rule.getSets() << endl;
+                    cout << rule.getOperation() << endl;
+                    cout << "---------------------------------------------------------\n";
+                }
+            } else if (option == 4) {
+                // Process the variables and perform fuzzy logic operations
+                std::map<std::string, double> fuzzifiedValues;
+
+                for (auto& var : variables) {
+                    if (var.getType() == "IN") {
+                        std::cout << "Enter value for " << var.getName() << ": ";
+                        int crispValue;
+
+                        // Validate input to ensure it's an integer
+                        while (!(std::cin >> crispValue)) {
+                            std::cin.clear(); // Clear the error state
+                            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
+                            std::cout << "Invalid input. Please enter a number for " << var.getName() << ": ";
+                        }
+
+                        // Fuzzify the crisp value
+                        // auto currentFuzzifiedValues = fuzzifyValue(crispValue, var.getName(), fuzzySets);
+                        // fuzzifiedValues.insert(currentFuzzifiedValues.begin(), currentFuzzifiedValues.end());
+                    }
+                }
+
+                // Display the fuzzified values
+                // std::cout << "\nFuzzified Values:\n";
+                // for (const auto& [key, value] : fuzzifiedValues) {
+                    // std::cout << key << ": " << value << "\n";
+                // }
+
+                // Clear vectors and run any final processes
+                clearVectors();
+            } else if (option == 5) {
+                // Return to the main menu
+                break;
+            } else {
+                std::cout << "Invalid option. Please try again.\n";
             }
-
-            // Fuzzify the input value
-            auto variableFuzzifiedValues = fuzzifyValue(crispValue, var.getName(), associatedFuzzySets);
-            fuzzifiedValues.insert(variableFuzzifiedValues.begin(), variableFuzzifiedValues.end());
         }
     }
-
-    // Step 2: Apply inference rules
-    map<string, double> aggregatedOutputs;
-    for (auto& rule : rules) {
-    vector<string> ruleVariables = rule.getVariables();
-    vector<string> ruleSets = rule.getSets();
-    string operation = rule.getOperation();
-
-    // Ensure we have at least two inputs
-    if (ruleVariables.size() < 2 || ruleSets.size() < 2) {
-        cerr << "Error: Rule is not properly defined.\n";
-        continue;
-    }
-
-    // Extract the fuzzified values for the rule's variables
-    map<string, double> fuzzyValuesA, fuzzyValuesB;
-
-    if (fuzzifiedValues.find(ruleVariables[0] + " " + ruleSets[0]) != fuzzifiedValues.end()) {
-        fuzzyValuesA[ruleVariables[0] + " " + ruleSets[0]] = fuzzifiedValues[ruleVariables[0] + " " + ruleSets[0]];
-    }
-
-    if (fuzzifiedValues.find(ruleVariables[1] + " " + ruleSets[1]) != fuzzifiedValues.end()) {
-        fuzzyValuesB[ruleVariables[1] + " " + ruleSets[1]] = fuzzifiedValues[ruleVariables[1] + " " + ruleSets[1]];
-    }
-
-    if (fuzzyValuesA.empty() || fuzzyValuesB.empty()) {
-        cerr << "Error: Could not find fuzzified values for rule variables.\n";
-        continue;
-    }
-
-    // Apply the fuzzy operation
-    auto ruleResults = applyFuzzyInference(fuzzyValuesA, fuzzyValuesB, operation);
-
-    // Store the results for the output variable
-    string outputSet = ruleSets.back();
-    aggregatedOutputs[outputSet] = max(aggregatedOutputs[outputSet], ruleResults.begin()->second);
-    }
-
-
-    // Step 3: Defuzzify the output
-    vector<Fuzzy> outputFuzzySets;
-    for ( auto& fuzzy : fuzzySet) {
-        if (fuzzy.getName().find("OUT") != string::npos) {
-            outputFuzzySets.push_back(fuzzy);
-        }
-    }
-
-    double crispOutput = defuzzify(aggregatedOutputs, outputFuzzySets);
-    cout << "Final Crisp Output: " << crispOutput << endl;
 }
+
+};
+
+int main(){
+    // ===> Test Variables input
+    // ===> Test Fuzzy Set input
+    // ===> Test Rules input
+    // handleRulesInput();
+    Extraction extraction;
+    Algo algo(extraction);
+    algo.run();
+}
+
+
+// // Run the fuzzy logic system
+// void runFuzzySystem() {
+//     // Step 1: Input crisp values for each input variable
+//     map<string, double> fuzzifiedValues;
+//     for ( auto& var : variables) {
+//         if (var.getType() == "IN") {
+//             cout << "Enter crisp value for " << var.getName() << " (range: [" << var.getLower() << ", " << var.getUpper() << "]): ";
+//             int crispValue;
+//             cin >> crispValue;
+
+//             // Get fuzzy sets associated with the variable
+//             vector<Fuzzy> associatedFuzzySets;
+//             for ( auto& fuzzy : fuzzySet) {
+//                 if (fuzzy.getName().find(var.getName()) != string::npos) {
+//                     associatedFuzzySets.push_back(fuzzy);
+//                 }
+//             }
+
+//             // Fuzzify the input value
+//             auto variableFuzzifiedValues = fuzzifyValue(crispValue, var.getName(), associatedFuzzySets);
+//             fuzzifiedValues.insert(variableFuzzifiedValues.begin(), variableFuzzifiedValues.end());
+//         }
+//     }
+
+//     // Step 2: Apply inference rules
+//     map<string, double> aggregatedOutputs;
+//     for (auto& rule : rules) {
+//     vector<string> ruleVariables = rule.getVariables();
+//     vector<string> ruleSets = rule.getSets();
+//     string operation = rule.getOperation();
+
+//     // Ensure we have at least two inputs
+//     if (ruleVariables.size() < 2 || ruleSets.size() < 2) {
+//         cerr << "Error: Rule is not properly defined.\n";
+//         continue;
+//     }
+
+//     // Extract the fuzzified values for the rule's variables
+//     map<string, double> fuzzyValuesA, fuzzyValuesB;
+
+//     if (fuzzifiedValues.find(ruleVariables[0] + " " + ruleSets[0]) != fuzzifiedValues.end()) {
+//         fuzzyValuesA[ruleVariables[0] + " " + ruleSets[0]] = fuzzifiedValues[ruleVariables[0] + " " + ruleSets[0]];
+//     }
+
+//     if (fuzzifiedValues.find(ruleVariables[1] + " " + ruleSets[1]) != fuzzifiedValues.end()) {
+//         fuzzyValuesB[ruleVariables[1] + " " + ruleSets[1]] = fuzzifiedValues[ruleVariables[1] + " " + ruleSets[1]];
+//     }
+
+//     if (fuzzyValuesA.empty() || fuzzyValuesB.empty()) {
+//         cerr << "Error: Could not find fuzzified values for rule variables.\n";
+//         continue;
+//     }
+
+//     // Apply the fuzzy operation
+//     auto ruleResults = applyFuzzyInference(fuzzyValuesA, fuzzyValuesB, operation);
+
+//     // Store the results for the output variable
+//     string outputSet = ruleSets.back();
+//     aggregatedOutputs[outputSet] = max(aggregatedOutputs[outputSet], ruleResults.begin()->second);
+//     }
+
+
+//     // Step 3: Defuzzify the output
+//     vector<Fuzzy> outputFuzzySets;
+//     for ( auto& fuzzy : fuzzySet) {
+//         if (fuzzy.getName().find("OUT") != string::npos) {
+//             outputFuzzySets.push_back(fuzzy);
+//         }
+//     }
+
+//     double crispOutput = defuzzify(aggregatedOutputs, outputFuzzySets);
+//     cout << "Final Crisp Output: " << crispOutput << endl;
+// }
