@@ -9,7 +9,9 @@
 #include <cmath>  // for std::abs
 #include <random>  // For better random number generation
 #include <fstream>
+
 using namespace std;
+
 template <typename T>
 ostream& operator<<(ostream& os, const vector<T>& vec)
 {
@@ -67,7 +69,7 @@ class Variable{
 class Fuzzy{
     string name;
     string type;
-    vector<int>values;
+    vector<double>values;
     public:
     Fuzzy(){
 
@@ -79,7 +81,7 @@ class Fuzzy{
         type = _type;
     }
     // add value
-    void addValue(int _value){
+    void addValue(double _value){
         values.push_back(_value);
     }
 
@@ -89,7 +91,7 @@ class Fuzzy{
     string getType(){
         return type;
     }
-    vector<int> getValues(){
+    vector<double> getValues(){
         return values;
     }
     
@@ -98,7 +100,7 @@ class Fuzzy{
 class FuzzySet{
     string name;
     vector<Fuzzy> fuzzySet;
-
+public:
     FuzzySet(){
 
     }
@@ -112,10 +114,24 @@ class FuzzySet{
        return name;
     }
     vector<Fuzzy> getFuzzySet(){
-        return fuzzySet; 
+        return fuzzySet;
     }
 };
+class Rule1 {
+    vector<string> inVariables, inSets, outVariables, outSets;
+    string operation;
 
+public:
+    Rule1(const vector<string>& _inVars, const vector<string>& _inSets, const string& _op,
+         const vector<string>& _outVars, const vector<string>& _outSets)
+        : inVariables(_inVars), inSets(_inSets), operation(_op), outVariables(_outVars), outSets(_outSets) {}
+
+    string getOperation() const { return operation; }
+    const vector<string>& getInVariables() const { return inVariables; }
+    const vector<string>& getInSets() const { return inSets; }
+    const vector<string>& getOutVariables() const { return outVariables; }
+    const vector<string>& getOutSets() const { return outSets; }
+};
 class Rule{
     string operation;
     vector<string> variables;
@@ -188,10 +204,10 @@ Variable extractVariableData(string variable) {
 
     return v;
 }
+vector<Variable>variables;
 void handleVariablesInput(){
     cout << "Enter the variable's name, type (IN/OUT) and range ([lower, upper]): (Press x to finish)\n";
     string line;
-    vector<Variable>variables;
     while (true) {
         getline(cin, line);
         if (line.empty() || line == "x")  // Stop input on empty line
@@ -243,10 +259,12 @@ Fuzzy addFuzzy(string fuzzy){
     return f;
 }
 
+vector<Fuzzy>fuzzySet;
 void handleFuzzySetInput(){
+    string fuzzyName = inputFuzzyName();
     cout << "Enter the fuzzy set name, type (TRI/TRAP) and values: (Press x to finish)\n";
+    cin.ignore();
     string line;
-    vector<Fuzzy>fuzzySet;
     while (true) {
         getline(cin, line);
         if (line.empty() || line == "x")  // Stop input on empty line
@@ -283,10 +301,10 @@ Rule addRule(string rule){
     return r;
 }
 
+vector<Rule>rules;
 void handleRulesInput(){
-    cout << "Enter the rules in this format: (Press x to finish)\nLike: IN_variable set operator IN_variable set => OUT_variable set\n";
+    cout << "Enter the rules in this format: (Press x to finish)\nIN_variable set operator IN_variable set => OUT_variable set\n";
     string line;
-    vector<Rule>rules;
     while (true) {
         getline(cin, line);
         if (line.empty() || line == "x")  // Stop input on empty line
@@ -299,21 +317,213 @@ void handleRulesInput(){
         cout << "-------------------------------------------------------------\n";
     }
 }
+// Function for fuzzification using linear interpolation// Function for fuzzification using linear interpolation for triangle
+double triangleFuzzy(double x, double x1, double y1, double x2, double y2, double x3, double y3) {
+    if (x < x1 || x > x3) {
+        return 0.0; // Outside the fuzzy set
+    } else if (x >= x1 && x <= x2) {
+        // First interpolation (increasing from y1 to y2 between x1 and x2)
+        return (x - x1) * (y2 - y1) / (x2 - x1) + y1;
+    } else if (x >= x2 && x <= x3) {
+        // Second interpolation (decreasing from y2 to y3 between x2 and x3)
+        return (x3 - x) * (y3 - y2) / (x3 - x2) + y2; // Corrected direction for decreasing slope
+    }
+    return 0.0; // Default case
+}
 
-class Algo{
+// Function for fuzzification using linear interpolation for trapezoid
+double trapezoidalFuzzy(double x, double x1, double x2, double x3, double x4, double y1, double y2, double y3, double y4) {
+    if (x < x1 || x > x4) {
+        return 0.0;  // Outside the fuzzy set range, membership is 0
+    }
+    else if (x >= x1 && x <= x2) {
+        // Increasing linearly from y1 to y2 between x1 and x2
+        return (x - x1) * (y2 - y1) / (x2 - x1) + y1;
+    }
+    else if (x >= x2 && x <= x3) {
+        // Constant membership y2 between x2 and x3
+        return y2;
+    }
+    else if (x >= x3 && x <= x4) {
+        // Decreasing linearly from y2 to y3 between x3 and x4
+        return (x4 - x) * (y3 - y2) / (x4 - x3) + y2;
+    }
+    return 0.0; // Default case
+}
 
-};
 
+
+// Fuzzify a value for a specific variable using fuzzy sets
+map<string, double> fuzzifyValue(int value, string variableName, vector<Fuzzy> fuzzySets) {
+     map<string, double> fuzzifiedValues;
+
+    // Iterate through each fuzzy set
+    for (auto& fuzzy : fuzzySets) {
+        vector<double> setValues = fuzzy.getValues();
+        string fuzzyType = fuzzy.getType();
+        string key = variableName + " " + fuzzy.getName();  // Key = (variableName fuzzyName)
+
+        double fuzzifiedValue = 0.0;
+
+        if (fuzzyType == "TRI" && setValues.size() == 3) {  // Triangular fuzzy set
+            double x1 = setValues[0], x2 = setValues[1], x3 = setValues[2];
+            double y1 = 0.0, y2 = 1.0, y3 = 0.0;  // Membership values for triangular set (low: 0, medium: 1, high: 0)
+
+            // Fuzzify the value for the TRI fuzzy set
+            fuzzifiedValue = triangleFuzzy(value, x1, y1, x2, y2, x3, y3); // Calculate fuzzified value (low to high)
+        } else if (fuzzyType == "TRAP" && setValues.size() == 4) {  // Trapezoidal fuzzy set
+            double x1 = setValues[0], x2 = setValues[1], x3 = setValues[2], x4 = setValues[3];
+            double y1 = 0.0, y2 = 1.0, y3 = 1.0, y4 = 0.0;  // Membership values for trapezoidal set
+
+            // Fuzzify the value for the TRAP fuzzy set
+            fuzzifiedValue = trapezoidalFuzzy(value, x1, y1, x2, y2, x3, y3, x4, y4); // Calculate fuzzified value (flat middle)
+        }
+
+        // Add the fuzzified value for this fuzzy set
+        fuzzifiedValues[key] = fuzzifiedValue;
+    }
+    for(auto c:fuzzifiedValues){
+        cout << c.first << " " << c.second << endl;
+    }
+    // Return the fuzzified values
+    return fuzzifiedValues;
+}
+double complement(double membershipValue) {
+    return 1.0 - membershipValue;
+}
+
+double fuzzyAnd(double membershipValueA, double membershipValueB) {
+    return min(membershipValueA, membershipValueB);
+}
+
+double fuzzyOr(double membershipValueA, double membershipValueB) {
+    return max(membershipValueA, membershipValueB);
+}
+map<string, double> applyFuzzyInference(const map<string, double>& fuzzyValuesA,const map<string, double>& fuzzyValuesB,const string& operation) {
+    map<string, double> result;
+    for (const auto& pairA : fuzzyValuesA) {
+        string keyA = pairA.first;  // Key for fuzzyValuesA
+        double membershipValueA = pairA.second;
+
+        // Iterate through all fuzzy sets in fuzzyValuesB
+        for (const auto& pairB : fuzzyValuesB) {
+            string keyB = pairB.first;  // Key for fuzzyValuesB
+            double membershipValueB = pairB.second;
+
+            string combinedKey = keyA + " and " + keyB;  // Combine keys for result
+
+            // Perform fuzzy operations based on the specified operation
+            if (operation == "and") {
+                result[combinedKey] = fuzzyAnd(membershipValueA, membershipValueB);
+            } else if (operation == "or") {
+                result[combinedKey] = fuzzyOr(membershipValueA, membershipValueB);
+            } else if (operation == "and_not") {
+                result[combinedKey] = fuzzyAnd(membershipValueA,complement(membershipValueB));
+            } else if(operation == "or_not"){
+                result[combinedKey] = fuzzyOr(membershipValueA,complement(membershipValueB));
+            } else {
+                throw invalid_argument("Invalid operation: " + operation);
+            }
+        }
+    }
+    return result;
+}
+double defuzzify(map<string, double>& aggregatedOutputs, vector<Fuzzy>& outputFuzzySets) {
+    double numerator = 0.0, denominator = 0.0;
+
+    for (auto& fuzzy : outputFuzzySets) {
+        vector<double> setValues = fuzzy.getValues();
+        double centroid = (setValues[0] + setValues[1] + setValues[2]) / 3.0; // Centroid of TRI set
+        double membershipValue = aggregatedOutputs.at(fuzzy.getName());
+
+        numerator += centroid * membershipValue;
+        denominator += membershipValue;
+    }
+
+    return (denominator == 0.0) ? 0.0 : numerator / denominator; // Avoid division by zero
+}
+// Run the fuzzy logic system
+void runFuzzySystem() {
+    // Step 1: Input crisp values for each input variable
+    map<string, double> fuzzifiedValues;
+    for ( auto& var : variables) {
+        if (var.getType() == "IN") {
+            cout << "Enter crisp value for " << var.getName() << " (range: [" << var.getLower() << ", " << var.getUpper() << "]): ";
+            int crispValue;
+            cin >> crispValue;
+
+            // Get fuzzy sets associated with the variable
+            vector<Fuzzy> associatedFuzzySets;
+            for ( auto& fuzzy : fuzzySet) {
+                if (fuzzy.getName().find(var.getName()) != string::npos) {
+                    associatedFuzzySets.push_back(fuzzy);
+                }
+            }
+
+            // Fuzzify the input value
+            auto variableFuzzifiedValues = fuzzifyValue(crispValue, var.getName(), associatedFuzzySets);
+            fuzzifiedValues.insert(variableFuzzifiedValues.begin(), variableFuzzifiedValues.end());
+        }
+    }
+
+    // Step 2: Apply inference rules
+    map<string, double> aggregatedOutputs;
+    for (auto& rule : rules) {
+    vector<string> ruleVariables = rule.getVariables();
+    vector<string> ruleSets = rule.getSets();
+    string operation = rule.getOperation();
+
+    // Ensure we have at least two inputs
+    if (ruleVariables.size() < 2 || ruleSets.size() < 2) {
+        cerr << "Error: Rule is not properly defined.\n";
+        continue;
+    }
+
+    // Extract the fuzzified values for the rule's variables
+    map<string, double> fuzzyValuesA, fuzzyValuesB;
+
+    if (fuzzifiedValues.find(ruleVariables[0] + " " + ruleSets[0]) != fuzzifiedValues.end()) {
+        fuzzyValuesA[ruleVariables[0] + " " + ruleSets[0]] = fuzzifiedValues[ruleVariables[0] + " " + ruleSets[0]];
+    }
+
+    if (fuzzifiedValues.find(ruleVariables[1] + " " + ruleSets[1]) != fuzzifiedValues.end()) {
+        fuzzyValuesB[ruleVariables[1] + " " + ruleSets[1]] = fuzzifiedValues[ruleVariables[1] + " " + ruleSets[1]];
+    }
+
+    if (fuzzyValuesA.empty() || fuzzyValuesB.empty()) {
+        cerr << "Error: Could not find fuzzified values for rule variables.\n";
+        continue;
+    }
+
+    // Apply the fuzzy operation
+    auto ruleResults = applyFuzzyInference(fuzzyValuesA, fuzzyValuesB, operation);
+
+    // Store the results for the output variable
+    string outputSet = ruleSets.back();
+    aggregatedOutputs[outputSet] = max(aggregatedOutputs[outputSet], ruleResults.begin()->second);
+    }
+
+
+    // Step 3: Defuzzify the output
+    vector<Fuzzy> outputFuzzySets;
+    for ( auto& fuzzy : fuzzySet) {
+        if (fuzzy.getName().find("OUT") != string::npos) {
+            outputFuzzySets.push_back(fuzzy);
+        }
+    }
+
+    double crispOutput = defuzzify(aggregatedOutputs, outputFuzzySets);
+    cout << "Final Crisp Output: " << crispOutput << endl;
+}
 int main(){
-    // inputSystemDesc();
-
     // ===> Test Variables input
-    // handleVariablesInput();
+    handleVariablesInput();
     // ===> Test Fuzzy Set input
-    // handleFuzzySetInput();
-
+    handleFuzzySetInput();
     // ===> Test Rules input
     handleRulesInput();
+    runFuzzySystem();
+    return 0;
 }
 
 // void mainMenu() {
