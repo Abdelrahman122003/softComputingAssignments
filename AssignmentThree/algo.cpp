@@ -220,25 +220,9 @@ class Extraction
         return f;
     }
 
-// void handleFuzzySetInput(){
-//     cout << "Enter the fuzzy set name, type (TRI/TRAP) and values: (Press x to finish)\n";
-//     string line;
-//     vector<Fuzzy>fuzzySet;
-//     while (true) {
-//         getline(cin, line);
-//         if (line.empty() || line == "x")  // Stop input on empty line
-//             break;
-//         Fuzzy f = addFuzzy(line);
-//         fuzzySet.push_back(f);
-//         f.getName();
-//         f.getType();
-//         f.getValues();
-//         cout << "-------------------------------------------------------------\n";
-//     }
-// }
 // ===> CODE FOR STORE RULES FUZZY LOGIC ALGO
 
-Rule addRule(string rule){
+Rule extractRuleData(string rule){
     Rule r;
     // Example input: proj_funding high or exp_level expert => risk low
 
@@ -267,8 +251,15 @@ Rule addRule(string rule){
 class InputData{
     Extraction e;
     public:
+    InputData(){
+    }
     InputData(Extraction _e){
         e = _e;
+    }
+    int inputOption(){
+        int option;
+        cin >> option;
+        return option;
     }
     string inputSystemTitle(){
         string title;
@@ -304,10 +295,10 @@ class InputData{
         return variableName;
     }
     // ===> CODE FOR STORE FUZZY SET IN FUZZY LOGIC ALGO 
-    void fuzzySetInput(){
+    void fuzzySetInput(vector<Fuzzy>fuzzySet){
         cout << "Enter the fuzzy set name, type (TRI/TRAP) and values: (Press x to finish)\n";
         string line;
-        vector<Fuzzy>fuzzySet;
+        // vector<Fuzzy>fuzzySet;
         while (true) {
             getline(cin, line);
             if (line.empty() || line == "x")  // Stop input on empty line
@@ -322,10 +313,10 @@ class InputData{
     }
 
     // ===> CODE FOR STORE RULES FUZZY LOGIC ALGO
-    void rulesInput(){
+    void rulesInput(vector<Rule>rules){
         cout << "Enter the rules in this format: (Press x to finish)\nLike: IN_variable set operator IN_variable set => OUT_variable set\n";
         string line;
-        vector<Rule>rules;
+        // vector<Rule>rules;
         while (true) {
             getline(cin, line);
             if (line.empty() || line == "x")  // Stop input on empty line
@@ -339,10 +330,10 @@ class InputData{
         }
     }
     // ===> CODE FOR STORE VARIABLES IN FUZZY LOGIC ALGO 
-    void variablesInput(){
+    void variablesInput(vector<Variable>variables){
         cout << "Enter the variable's name, type (IN/OUT) and range ([lower, upper]): (Press x to finish)\n";
         string line;
-        vector<Variable>variables;
+        // vector<Variable>variables;
         while (true) {
             getline(cin, line);
             if (line.empty() || line == "x")  // Stop input on empty line
@@ -360,7 +351,7 @@ class InputData{
 
 
 class Ouput{
-
+public:
     Ouput(){
         
     }
@@ -382,14 +373,50 @@ class Ouput{
     }
 };
 class Algo{
-
+    vector<Variable> variables;
+    vector<Fuzzy> fuzzySets;
+    vector<Rule> rules;
+    Ouput output;
+    Extraction extraction;
+    InputData input;
+    public:
+    Algo(Extraction extractionData): extraction(extractionData), input(extractionData) {}
+    void run(){
+        while(true){
+                output.mainMenu();
+                int option = input.inputOption();
+                if(option == 1)
+                {
+                    output.optionsMenu();
+                    option = input.inputOption();
+                    if (option == 1){
+                        input.variablesInput(variables);
+                    }
+                    else if(option == 2){
+                        input.fuzzySetInput(fuzzySets);
+                    }else if(option == 3){
+                        input.rulesInput(rules);
+                    }
+                    else if(option == 4){
+                        //run
+                    map<string, double> fuzzifiedValues;
+                    for ( auto& var : variables) {
+                        if (var.getType() == "IN") {
+                            cout << var.getName() << ": ";
+                            int crispValue;
+                            cin >> crispValue;
+                        }
+                    }
+                }
+                else break;
+            }
+        }
+    }
 };
 
 int main(){
     // ===> Test Variables input
-    handleVariablesInput();
     // ===> Test Fuzzy Set input
-    handleFuzzySetInput();
     // ===> Test Rules input
     // handleRulesInput();
 }
