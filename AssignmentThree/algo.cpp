@@ -1,13 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cstdlib> // For rand() and srand()
-#include <ctime>   // For time()
+#include <cstdlib>
+#include <ctime>
 #include <map>
 #include <algorithm>
-#include <numeric> // For std::accumulate
-#include <cmath>   // for std::abs
-#include <random>  // For better random number generation
+#include <numeric>
+#include <cmath>
+#include <random>
 #include <fstream>
 
 using namespace std;
@@ -217,10 +217,10 @@ public:
         v.setLower(stoi(lower));
         v.setUpper(stoi(variable)); // Remaining part is the upper bound
 
-        cout << "Name: " << v.getName() << endl;
-        cout << "Type: " << v.getType() << endl;
-        cout << "Lower bound: " << v.getLower() << endl;
-        cout << "Upper bound: " << v.getUpper() << endl;
+        cout << "Name: " << v.getName() << '\n';
+        cout << "Type: " << v.getType() << '\n';
+        cout << "Lower bound: " << v.getLower() << '\n';
+        cout << "Upper bound: " << v.getUpper() << '\n';
         return v;
     }
 
@@ -243,10 +243,10 @@ public:
         if (f.getType() == "TRAP")
             f.addValue(stoi(extractToken(fuzzy, ' ')));
         f.addValue(stoi(fuzzy.substr(0)));
-        cout << "Name: " << f.getName() << endl;
-        cout << "Type: " << f.getType() << endl;
+        cout << "Name: " << f.getName() << '\n';
+        cout << "Type: " << f.getType() << '\n';
         cout << "Values: ";
-        cout << f.getValues() << endl;
+        cout << f.getValues() << '\n';
         return f;
     }
 
@@ -363,9 +363,9 @@ public:
                 break;
             Rule r = e.extractRuleData(line);
             rules.push_back(r);
-            cout << r.getVariables() << endl;
-            cout << r.getSets() << endl;
-            cout << r.getOperation() << endl;
+            cout << r.getVariables() << '\n';
+            cout << r.getSets() << '\n';
+            cout << r.getOperation() << '\n';
             cout << "-------------------------------------------------------------\n";
         }
     }
@@ -381,10 +381,10 @@ public:
                 break;
             Variable v = e.extractVariableData(line);
             variables.push_back(v);
-            cout << v.getName() << endl;
-            cout << v.getType() << endl;
-            cout << v.getLower() << endl;
-            cout << v.getUpper() << endl;
+            cout << v.getName() << '\n';
+            cout << v.getType() << '\n';
+            cout << v.getLower() << '\n';
+            cout << v.getUpper() << '\n';
             cout << "-------------------------------------------------------------\n";
         }
     }
@@ -454,7 +454,7 @@ double trapezoidalFuzzy(double x, double x1, double x2, double x3, double x4, do
         // Decreasing linearly from y2 to y3 between x3 and x4
         return (x4 - x) * (y3 - y2) / (x4 - x3) + y2;
     }
-    return 0.0; // Default case
+    return 0.0;
 }
 
 map<string, double> fuzzifyValue(double value, string variableName, vector<FuzzySet> &fuzzySets)
@@ -498,13 +498,10 @@ map<string, double> fuzzifyValue(double value, string variableName, vector<Fuzzy
                 }
                 catch (exception &e)
                 {
-                    cerr << "Error fuzzifying " << key << ": " << e.what() << endl;
+                    cerr << "Error fuzzifying " << key << ": " << e.what() << '\n';
                     fuzzifiedValues[key] = 0.0; // Assign a default value of 0 for invalid entries
                     continue;                   // Skip this fuzzy set and proceed to the next
                 }
-
-                // Debugging: Output each calculated membership value (including zeroes)
-                // cout << "Fuzzified: " << key << " -> " << fuzzifiedValue << endl;
             }
         }
     }
@@ -539,7 +536,7 @@ map<string, double> applyFuzzyInference(const map<string, double> &fuzzyValuesA,
             string keyB = pairB.first; // Key for fuzzyValuesB
             double membershipValueB = pairB.second;
 
-            string combinedKey = keyA + " and " + keyB; // Combine keys for result
+            string combinedKey = keyA + ' ' + operation + ' ' + keyB; // Combine keys for result
 
             // Perform fuzzy operations based on the specified operation
             if (operation == "and")
@@ -566,7 +563,7 @@ map<string, double> applyFuzzyInference(const map<string, double> &fuzzyValuesA,
     }
     return result;
 }
-// Assuming FuzzySet has the methods getValues() and getName()
+
 double defuzzify(map<string, double> &aggregatedOutputs, vector<Fuzzy> &outputFuzzySets)
 {
     double numerator = 0.0, denominator = 0.0;
@@ -574,7 +571,7 @@ double defuzzify(map<string, double> &aggregatedOutputs, vector<Fuzzy> &outputFu
     // Iterate through each fuzzy set in the output fuzzy sets
     for (auto &fuzzySet : outputFuzzySets)
     {
-        // Get the values of the fuzzy set (e.g., x1, x2, x3 for a TRI set)
+        // Get the values of the fuzzy set (x1, x2, x3)
         vector<double> setValues = fuzzySet.getValues();
 
         // Debugging: Print out the fuzzy set values
@@ -583,30 +580,43 @@ double defuzzify(map<string, double> &aggregatedOutputs, vector<Fuzzy> &outputFu
         {
             cout << value << " ";
         }
-        cout << endl;
+        cout << '\n';
 
-        // Check if the set has the correct number of values (assuming TRI here, so it should have 3 values)
-        if (setValues.size() != 3)
+       if (setValues.size() == 3)
         {
-            cout << "Error: Expected 3 values for TRI fuzzy set, found " << setValues.size() << endl;
-            continue; // Skip this fuzzy set if it doesn't have 3 values
+            // Triangular fuzzy set (TRI)
+            double centroid = (setValues[0] + setValues[1] + setValues[2]) / 3.0;
+            cout << "Calculated Centroid (TRI): " << centroid << '\n';
+
+            // Get the membership value for this fuzzy set from the aggregated outputs map
+            double membershipValue = aggregatedOutputs.at(fuzzySet.getName()); // Use FuzzySet's name
+            cout << "Membership Value: " << membershipValue << '\n';
+
+            // Update numerator and denominator for defuzzification
+            numerator += centroid * membershipValue;
+            denominator += membershipValue;
         }
+        else if (setValues.size() == 4)
+        {
+            // Trapezoidal fuzzy set (TRAP)
+            double centroid = (setValues[0] + setValues[1] + setValues[2] + setValues[4]) / 4.0;
+            cout << "Calculated Centroid (TRAP): " << centroid << '\n';
 
-        // Calculate the centroid of the triangular fuzzy set
-        double centroid = (setValues[0] + setValues[1] + setValues[2]) / 3.0; // Assuming TRI set
-        cout << "Calculated Centroid: " << centroid << endl;
+            // Get the membership value for this fuzzy set from the aggregated outputs map
+            double membershipValue = aggregatedOutputs.at(fuzzySet.getName());
+            cout << "Membership Value: " << membershipValue << '\n';
 
-        // Get the membership value for this fuzzy set from the aggregated outputs map
-        double membershipValue = aggregatedOutputs.at(fuzzySet.getName()); // Use FuzzySet's name
-        cout << "Membership Value: " << membershipValue << endl;
-
-        // Update numerator and denominator for defuzzification
-        numerator += centroid * membershipValue;
-        denominator += membershipValue;
+            // Update numerator and denominator for defuzzification
+            numerator += centroid * membershipValue;
+            denominator += membershipValue;
+        }
+         else
+        {
+            cout << "Error: Unsupported fuzzy set type with " << setValues.size() << " values." << '\n';
+        }
     }
 
-    // Debugging: Print out the final numerator and denominator
-    cout << "Numerator: " << numerator << " Denominator: " << denominator << endl;
+    cout << "Numerator: " << numerator << " Denominator: " << denominator << '\n';
 
     // Avoid division by zero
     return (denominator == 0.0) ? 0.0 : numerator / denominator;
@@ -666,10 +676,10 @@ public:
 
                     for (auto var : variables)
                     {
-                        cout << var.getName() << endl;
-                        cout << var.getType() << endl;
-                        cout << var.getLower() << endl;
-                        cout << var.getUpper() << endl;
+                        cout << var.getName() << '\n';
+                        cout << var.getType() << '\n';
+                        cout << var.getLower() << '\n';
+                        cout << var.getUpper() << '\n';
                         cout << "-----------------------------------------\n";
                     }
                     varInit = 1;
@@ -683,12 +693,12 @@ public:
                     fuzzySets.push_back(fuzzySet);
                     for (auto fuzzySet : fuzzySets)
                     {
-                        cout << fuzzySet.getName() << endl;
+                        cout << fuzzySet.getName() << '\n';
                         for (auto fuzzy : fuzzySet.getFuzzySet())
                         {
-                            cout << fuzzy.getName() << endl;
-                            cout << fuzzy.getType() << endl;
-                            cout << fuzzy.getValues() << endl;
+                            cout << fuzzy.getName() << '\n';
+                            cout << fuzzy.getType() << '\n';
+                            cout << fuzzy.getValues() << '\n';
                         }
                         cout << "------------------------------------------\n";
                     }
@@ -700,9 +710,9 @@ public:
 
                     for (auto rule : rules)
                     {
-                        cout << rule.getVariables() << endl;
-                        cout << rule.getSets() << endl;
-                        cout << rule.getOperation() << endl;
+                        cout << rule.getVariables() << '\n';
+                        cout << rule.getSets() << '\n';
+                        cout << rule.getOperation() << '\n';
                         cout << "---------------------------------------------------------\n";
                     }
                     ruleInit = 1;
@@ -720,7 +730,6 @@ public:
                             cout << "Please add the rules.\n";
                         continue;
                     }
-                    // Process the variables and perform fuzzy logic operations
                     map<string, double> fuzzifiedValues;
 
                     cout << "Enter the crisp values: \n";
@@ -731,7 +740,6 @@ public:
                             cout << var.getName() << ": ";
                             int crispValue;
 
-                            // Validate input to ensure it's an integer
                             while (!(cin >> crispValue))
                             {
                                 cin.clear();                                         // Clear the error state
@@ -800,9 +808,30 @@ public:
                         cout << c.getName() << " " << c.getType() << " " << c.getValues() << '\n';
                     }
                     double crispOutput = defuzzify(aggregatedOutputs, outputFuzzySets);
-                    cout << "Final Crisp Output: " << crispOutput << endl;
+                    double max = -1.0;
+                    string maxStr;
+                    for (auto c : aggregatedOutputs)
+                    {
+                        if (max <= c.second)
+                        {
+                            max = c.second;
+                            maxStr = c.first;
+                        }
+                    }
+                    string outVar;
+                    for (auto c : variables)
+                    {
+                        if (c.getType() == "OUT")
+                            outVar = c.getName();
+                    }
+                    cout << "Running the simulation...\n";
+                    cout << "Fuzzification => done:\n";
+                    cout << "Inference => done\n";
+                    cout << "Defuzzification => done\n";
+                    cout << "\nThe predicted " << outVar << " is " << maxStr << " (" << crispOutput << ')' << "\n \n";
                     // Clear vectors and run any final processes
                     clearVectors();
+                    // Reset Boolean Variables
                     varInit = 0;
                     fuzzyInit = 0;
                     ruleInit = 0;
@@ -815,7 +844,7 @@ public:
                 }
                 else
                 {
-                    std::cout << "Invalid option. Please try again.\n";
+                    cout << "Invalid option. Please try again.\n";
                 }
             }
         }
