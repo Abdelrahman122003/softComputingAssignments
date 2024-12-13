@@ -527,22 +527,22 @@ double defuzzify(map<string, double> &aggregatedOutputs, vector<Fuzzy> &outputFu
         vector<double> setValues = fuzzySet.getValues();
 
         // Debugging: Print out the fuzzy set values
-        cout << "Fuzzy Set: " << fuzzySet.getName() << " Values: ";
-        for (double value : setValues)
-        {
-            cout << value << " ";
-        }
-        cout << '\n';
+        // cout << "Fuzzy Set: " << fuzzySet.getName() << " Values: ";
+        // for (double value : setValues)
+        // {
+        //     cout << value << " ";
+        // }
+        // cout << '\n';
 
-       if (setValues.size() == 3)
+        if (setValues.size() == 3)
         {
             // Triangular fuzzy set (TRI)
             double centroid = (setValues[0] + setValues[1] + setValues[2]) / 3.0;
-            cout << "Calculated Centroid (TRI): " << centroid << '\n';
+            // cout << "Calculated Centroid (TRI): " << centroid << '\n';
 
             // Get the membership value for this fuzzy set from the aggregated outputs map
             double membershipValue = aggregatedOutputs.at(fuzzySet.getName()); // Use FuzzySet's name
-            cout << "Membership Value: " << membershipValue << '\n';
+            // cout << "Membership Value: " << membershipValue << '\n';
 
             // Update numerator and denominator for defuzzification
             numerator += centroid * membershipValue;
@@ -552,20 +552,20 @@ double defuzzify(map<string, double> &aggregatedOutputs, vector<Fuzzy> &outputFu
         {
             // Trapezoidal fuzzy set (TRAP)
             double centroid = (setValues[0] + setValues[1] + setValues[2] + setValues[4]) / 4.0;
-            cout << "Calculated Centroid (TRAP): " << centroid << '\n';
+            // cout << "Calculated Centroid (TRAP): " << centroid << '\n';
             // Get the membership value for this fuzzy set from the aggregated outputs map
             double membershipValue = aggregatedOutputs.at(fuzzySet.getName());
-            cout << "Membership Value: " << membershipValue << '\n';
+            // cout << "Membership Value: " << membershipValue << '\n';
             // Update numerator and denominator for defuzzification
             numerator += centroid * membershipValue;
             denominator += membershipValue;
         }
-         else
+        else
         {
             cout << "Error: Unsupported fuzzy set type with " << setValues.size() << " values." << '\n';
         }
     }
-    cout << "Numerator: " << numerator << " Denominator: " << denominator << '\n';
+    // cout << "Numerator: " << numerator << " Denominator: " << denominator << '\n';
     // Avoid division by zero
     return (denominator == 0.0) ? 0.0 : numerator / denominator;
 }
@@ -671,12 +671,11 @@ public:
                             fuzzifiedValues.insert(currentFuzzifiedValues.begin(), currentFuzzifiedValues.end());
                         }
                     }
-                    cout << "\nFuzzified Values:\n";
-                    for (auto c : fuzzifiedValues)
-                    {
-                        cout << c.first << " " << c.second << '\n';
-                    }
-
+                    // cout << "\nFuzzified Values:\n";
+                    // for (auto c : fuzzifiedValues)
+                    // {
+                    //     cout << c.first << " " << c.second << '\n';
+                    // }
                     map<string, double> aggregatedOutputs;
                     for (auto &rule : rules)
                     {
@@ -688,19 +687,19 @@ public:
                         fuzzyValuesB[ruleVariables[1] + " " + ruleSets[1]] = fuzzifiedValues[ruleVariables[1] + " " + ruleSets[1]];
                         //  Apply the fuzzy operation
                         auto ruleResults = applyFuzzyInference(fuzzyValuesA, fuzzyValuesB, operation);
-                        cout << "\nRule Results:\n";
-                        for (auto c : ruleResults)
-                        {
-                            cout << c.first << " " << c.second << '\n';
-                        }
+                        // cout << "\nRule Results:\n";
+                        // for (auto c : ruleResults)
+                        // {
+                        //     cout << c.first << " " << c.second << '\n';
+                        // }
                         // Store the results for the output variable
                         string outputSet = ruleSets.back();
                         aggregatedOutputs[outputSet] = max(aggregatedOutputs[outputSet], ruleResults.begin()->second);
-                        cout << "\nAggregated Outputs:\n";
-                        for (auto c : aggregatedOutputs)
-                        {
-                            cout << c.first << " " << c.second << '\n';
-                        }
+                        // cout << "\nAggregated Outputs:\n";
+                        // for (auto c : aggregatedOutputs)
+                        // {
+                        //     cout << c.first << " " << c.second << '\n';
+                        // }
                     }
                     vector<Fuzzy> outputFuzzySets;
                     for (auto &var : variables)
@@ -735,7 +734,7 @@ public:
                             outVar = c.getName();
                     }
                     cout << "Running the simulation...\n";
-                    cout << "Fuzzification => done:\n";
+                    cout << "Fuzzification => done\n";
                     cout << "Inference => done\n";
                     cout << "Defuzzification => done\n";
                     cout << "\nThe predicted " << outVar << " is " << maxStr << " (" << crispOutput << ')' << "\n \n";
