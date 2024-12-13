@@ -195,79 +195,55 @@ public:
     {
         Variable v;
         // Example input: proj_funding IN [0, 100]
-
         // 1) Extract the Name
         v.setName(extractToken(variable, ' '));
         // Now, variable contains: IN [0, 100]
-
         // 2) Extract the Type
         v.setType(extractToken(variable, ' '));
         // Now, variable contains: [0, 100]
-
         // 3) Extract the Range
         if (variable.front() != '[' || variable.back() != ']')
         {
             throw invalid_argument("Range must be enclosed in square brackets");
         }
-
         // Extract the lower bound
-
         variable = variable.substr(1, variable.size() - 2); // Remove brackets
         string lower = extractToken(variable, ',');         // Get lower bound
         v.setLower(stoi(lower));
         v.setUpper(stoi(variable)); // Remaining part is the upper bound
-
-        cout << "Name: " << v.getName() << '\n';
-        cout << "Type: " << v.getType() << '\n';
-        cout << "Lower bound: " << v.getLower() << '\n';
-        cout << "Upper bound: " << v.getUpper() << '\n';
         return v;
     }
-
     Fuzzy extractFuzzyData(string fuzzy)
     {
         Fuzzy f;
         // Example input: beginner TRI 0 15 30
-
         // 1) Extract the Name
         f.setName(extractToken(fuzzy, ' '));
         // Now, variable contains: TRI 0 15 30
-
         // 2) Extract the Type(TRI/TRAP)
         f.setType(extractToken(fuzzy, ' '));
         // Now, variable contains: 0 15 30
-
         // 3) Extract the values
         f.addValue(stoi(extractToken(fuzzy, ' ')));
         f.addValue(stoi(extractToken(fuzzy, ' ')));
         if (f.getType() == "TRAP")
             f.addValue(stoi(extractToken(fuzzy, ' ')));
         f.addValue(stoi(fuzzy.substr(0)));
-        cout << "Name: " << f.getName() << '\n';
-        cout << "Type: " << f.getType() << '\n';
-        cout << "Values: ";
-        cout << f.getValues() << '\n';
         return f;
     }
-
     // ===> CODE FOR STORE RULES FUZZY LOGIC ALGO
-
     Rule extractRuleData(string rule)
     {
         Rule r;
         // Example input: proj_funding high or exp_level expert => risk low
-
         // 1) Extract the IN_VAR
         r.setVariable(extractToken(rule, ' '));
         r.setSet(extractToken(rule, ' '));
-
         // 2) Extract the Operation
         r.setOperation(extractToken(rule, ' '));
-
         // 2) Extract the IN_VAR
         r.setVariable(extractToken(rule, ' '));
         r.setSet(extractToken(rule, ' '));
-
         extractToken(rule, ' '); // to remove =>
         r.setVariable(extractToken(rule, ' '));
         r.setSet(rule);
@@ -278,7 +254,6 @@ public:
 class InputData
 {
     Extraction e;
-
 public:
     InputData()
     {
@@ -296,12 +271,9 @@ public:
     string inputSystemTitle()
     {
         string title;
-
         // Input the title
         cout << "Enter the system's name: ";
         getline(cin, title);
-        // cout << "\nYou entered:\n";
-        // cout << "Title: " << title << "\n";
         return title;
     }
     string inputSystemDesc()
@@ -317,10 +289,6 @@ public:
                 break;
             description += line + "\n";
         }
-
-        // Output the input for confirmation
-        // cout << "\nYou entered:\n";
-        // cout << "Description:\n" << description;
         return description;
     }
     string inputVariableName()
@@ -343,14 +311,9 @@ public:
                 break;
             Fuzzy f = e.extractFuzzyData(line);
             fuzzySet.push_back(f);
-            f.getName();
-            f.getType();
-            f.getValues();
-            cout << "-------------------------------------------------------------\n";
         }
         return fuzzySet;
     }
-
     // ===> CODE FOR STORE RULES FUZZY LOGIC ALGO
     void rulesInput(vector<Rule> &rules)
     {
@@ -363,10 +326,6 @@ public:
                 break;
             Rule r = e.extractRuleData(line);
             rules.push_back(r);
-            cout << r.getVariables() << '\n';
-            cout << r.getSets() << '\n';
-            cout << r.getOperation() << '\n';
-            cout << "-------------------------------------------------------------\n";
         }
     }
     // ===> CODE FOR STORE VARIABLES IN FUZZY LOGIC ALGO
@@ -381,11 +340,6 @@ public:
                 break;
             Variable v = e.extractVariableData(line);
             variables.push_back(v);
-            cout << v.getName() << '\n';
-            cout << v.getType() << '\n';
-            cout << v.getLower() << '\n';
-            cout << v.getUpper() << '\n';
-            cout << "-------------------------------------------------------------\n";
         }
     }
 };
@@ -402,7 +356,6 @@ public:
         cout << "1- Create a new fuzzy system\n";
         cout << "2- Quit\n";
     }
-
     void optionsMenu()
     {
         cout << "Main Menu:\n";
@@ -413,7 +366,6 @@ public:
         cout << "4- Run the simulation on crisp values.\n";
     }
 };
-
 // Function for fuzzification using linear interpolation// Function for fuzzification using linear interpolation for triangle
 double triangleFuzzy(double x, double x1, double y1, double x2, double y2, double x3, double y3)
 {
@@ -601,11 +553,9 @@ double defuzzify(map<string, double> &aggregatedOutputs, vector<Fuzzy> &outputFu
             // Trapezoidal fuzzy set (TRAP)
             double centroid = (setValues[0] + setValues[1] + setValues[2] + setValues[4]) / 4.0;
             cout << "Calculated Centroid (TRAP): " << centroid << '\n';
-
             // Get the membership value for this fuzzy set from the aggregated outputs map
             double membershipValue = aggregatedOutputs.at(fuzzySet.getName());
             cout << "Membership Value: " << membershipValue << '\n';
-
             // Update numerator and denominator for defuzzification
             numerator += centroid * membershipValue;
             denominator += membershipValue;
@@ -615,9 +565,7 @@ double defuzzify(map<string, double> &aggregatedOutputs, vector<Fuzzy> &outputFu
             cout << "Error: Unsupported fuzzy set type with " << setValues.size() << " values." << '\n';
         }
     }
-
     cout << "Numerator: " << numerator << " Denominator: " << denominator << '\n';
-
     // Avoid division by zero
     return (denominator == 0.0) ? 0.0 : numerator / denominator;
 }
@@ -656,6 +604,8 @@ public:
             if (mainOption == 1)
             {
                 string title = input.inputSystemTitle();
+                cin.clear();
+                cin.ignore();
                 string brief = input.inputSystemDesc();
             }
             else if (mainOption == 2)
@@ -663,7 +613,6 @@ public:
                 cout << "You are exiting.\n";
                 break;
             }
-
             // Begin the second loop for multiple user interactions
             while (true)
             {
@@ -673,15 +622,6 @@ public:
                 if (option == 1)
                 {
                     input.variablesInput(variables);
-
-                    for (auto var : variables)
-                    {
-                        cout << var.getName() << '\n';
-                        cout << var.getType() << '\n';
-                        cout << var.getLower() << '\n';
-                        cout << var.getUpper() << '\n';
-                        cout << "-----------------------------------------\n";
-                    }
                     varInit = 1;
                 }
                 else if (option == 2)
@@ -691,30 +631,11 @@ public:
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                     fuzzySet.setFuzzySet(input.fuzzySetInput());
                     fuzzySets.push_back(fuzzySet);
-                    for (auto fuzzySet : fuzzySets)
-                    {
-                        cout << fuzzySet.getName() << '\n';
-                        for (auto fuzzy : fuzzySet.getFuzzySet())
-                        {
-                            cout << fuzzy.getName() << '\n';
-                            cout << fuzzy.getType() << '\n';
-                            cout << fuzzy.getValues() << '\n';
-                        }
-                        cout << "------------------------------------------\n";
-                    }
                     fuzzyInit = 1;
                 }
                 else if (option == 3)
                 {
                     input.rulesInput(rules);
-
-                    for (auto rule : rules)
-                    {
-                        cout << rule.getVariables() << '\n';
-                        cout << rule.getSets() << '\n';
-                        cout << rule.getOperation() << '\n';
-                        cout << "---------------------------------------------------------\n";
-                    }
                     ruleInit = 1;
                 }
                 else if (option == 4)
@@ -731,7 +652,6 @@ public:
                         continue;
                     }
                     map<string, double> fuzzifiedValues;
-
                     cout << "Enter the crisp values: \n";
                     for (auto &var : variables)
                     {
@@ -746,9 +666,7 @@ public:
                                 cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Discard invalid input
                                 cout << "Invalid input. Please enter a number for " << var.getName() << ": ";
                             }
-
                             // Fuzzify the crisp value
-
                             auto currentFuzzifiedValues = fuzzifyValue(crispValue, var.getName(), fuzzySets);
                             fuzzifiedValues.insert(currentFuzzifiedValues.begin(), currentFuzzifiedValues.end());
                         }
@@ -787,25 +705,17 @@ public:
                     vector<Fuzzy> outputFuzzySets;
                     for (auto &var : variables)
                     {
-                        cout << "var.getType(): " << var.getType() << '\n';
                         if (var.getType() == "OUT")
                         {
                             for (auto &fuzzySet : fuzzySets)
                             {
                                 for (auto fuzzy : fuzzySet.getFuzzySet())
                                 {
-                                    cout << "fuzzySet.getName(): " << fuzzySet.getName() << '\n';
                                     if (fuzzySet.getName() == var.getName())
                                         outputFuzzySets.push_back(fuzzy);
                                 }
                             }
                         }
-                    }
-
-                    cout << "\nOutput Fuzzy\n";
-                    for (auto c : outputFuzzySets)
-                    {
-                        cout << c.getName() << " " << c.getType() << " " << c.getValues() << '\n';
                     }
                     double crispOutput = defuzzify(aggregatedOutputs, outputFuzzySets);
                     double max = -1.0;
@@ -837,11 +747,6 @@ public:
                     ruleInit = 0;
                     break;
                 }
-                else if (option == 5)
-                {
-                    // Return to the main menu
-                    break;
-                }
                 else
                 {
                     cout << "Invalid option. Please try again.\n";
@@ -850,7 +755,6 @@ public:
         }
     }
 };
-
 int main()
 {
     Extraction extraction;
